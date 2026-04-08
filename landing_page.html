@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Onfly Conciliador – Tucano Hipersônico</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --blue:#1A56DB;--blue-dark:#1240AA;--blue-light:#EFF6FF;--blue-mid:#BFDBFE;
+    --green:#16A34A;--green-light:#F0FDF4;--green-mid:#BBF7D0;
+    --yellow:#D97706;--yellow-light:#FFFBEB;
+    --red:#DC2626;--red-light:#FEF2F2;
+    --slate50:#F8FAFC;--slate100:#F1F5F9;--slate200:#E2E8F0;
+    --slate400:#94A3B8;--slate500:#64748B;--slate700:#334155;--slate900:#0F172A;
+    --white:#fff;
+  }
+  html{scroll-behavior:smooth}
+  body{font-family:'Inter','Segoe UI',sans-serif;color:var(--slate900);background:var(--white);overflow-x:hidden}
+
+  /* NAV */
+  nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(255,255,255,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--slate200);padding:0 5vw;height:60px;display:flex;align-items:center;justify-content:space-between}
+  .logo{display:flex;align-items:center;gap:10px}
+  .logo-icon{width:34px;height:34px;background:var(--blue);border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px}
+  .logo-text{font-weight:700;font-size:16px;color:var(--slate900)}
+  .logo-text span{color:var(--blue)}
+  .nav-badge{background:var(--blue-light);color:var(--blue);font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;letter-spacing:.04em}
+  .nav-cta{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;transition:background .15s}
+  .nav-cta:hover{background:var(--blue-dark)}
+
+  /* HERO */
+  .hero{padding:120px 5vw 80px;text-align:center;background:linear-gradient(180deg,var(--blue-light) 0%,var(--white) 100%)}
+  .hero-tag{display:inline-flex;align-items:center;gap:6px;background:var(--blue-light);color:var(--blue);font-size:12px;font-weight:700;padding:5px 14px;border-radius:999px;margin-bottom:24px;border:1px solid var(--blue-mid)}
+  .hero-tag .dot{width:7px;height:7px;border-radius:50%;background:var(--blue);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
+  h1{font-size:clamp(32px,5vw,58px);font-weight:800;line-height:1.1;letter-spacing:-.02em;color:var(--slate900);margin-bottom:18px}
+  h1 .accent{color:var(--blue)}
+  .hero-sub{font-size:clamp(15px,2vw,19px);color:var(--slate500);max-width:600px;margin:0 auto 36px;line-height:1.6}
+  .hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .btn-primary{background:var(--blue);color:#fff;border:none;border-radius:10px;padding:13px 28px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;transition:background .15s,transform .1s}
+  .btn-primary:hover{background:var(--blue-dark);transform:translateY(-1px)}
+  .btn-secondary{background:var(--white);color:var(--slate700);border:1.5px solid var(--slate200);border-radius:10px;padding:13px 28px;font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;transition:border-color .15s}
+  .btn-secondary:hover{border-color:var(--blue);color:var(--blue)}
+
+  /* MOCKUP STRIP */
+  .mockup-strip{padding:0 5vw 80px;max-width:1100px;margin:0 auto}
+  .mockup{background:var(--white);border:1.5px solid var(--slate200);border-radius:16px;overflow:hidden;box-shadow:0 8px 48px rgba(0,0,0,.09)}
+  .mockup-bar{background:var(--slate100);padding:10px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--slate200)}
+  .dot-r{width:11px;height:11px;border-radius:50%;background:#FC5753}
+  .dot-y{width:11px;height:11px;border-radius:50%;background:#FDBC40}
+  .dot-g{width:11px;height:11px;border-radius:50%;background:#34C749}
+  .mockup-bar span{flex:1;text-align:center;font-size:12px;color:var(--slate400)}
+  .mockup-body{padding:28px 28px 20px;background:linear-gradient(135deg,var(--blue-light) 0%,var(--slate50) 100%)}
+  .m-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+  .m-title{font-size:18px;font-weight:800;color:var(--slate900)}
+  .m-subtitle{font-size:13px;color:var(--slate500);margin-top:2px}
+  .m-panels{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+  .m-panel{background:var(--white);border-radius:12px;padding:14px;border:1px solid var(--slate200)}
+  .m-panel-badge{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+  .m-num{width:18px;height:18px;border-radius:5px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:800}
+  .m-col-header{font-size:12px;font-weight:700}
+  .m-table{width:100%;border-collapse:collapse;font-size:11px}
+  .m-table th{padding:5px 8px;background:var(--blue);color:#fff;text-align:left;font-weight:600}
+  .m-table tr:nth-child(odd) td{background:var(--slate50)}
+  .m-table td{padding:5px 8px;color:var(--slate700);border-top:1px solid var(--slate200)}
+  .m-result{background:var(--white);border-radius:12px;padding:14px;border:1px solid var(--slate200)}
+  .m-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0}
+  .m-stat{border-radius:8px;padding:8px;text-align:center}
+  .m-stat-n{font-size:18px;font-weight:800}
+  .m-stat-l{font-size:10px;font-weight:600}
+  .status-row{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:6px;margin-bottom:4px;font-size:11px;font-weight:600}
+
+  /* STATS BAR */
+  .stats-bar{background:var(--blue);padding:48px 5vw;text-align:center}
+  .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:700px;margin:0 auto}
+  .stat-item .n{font-size:44px;font-weight:800;color:#fff;line-height:1}
+  .stat-item .l{font-size:13px;color:rgba(255,255,255,.72);margin-top:6px;font-weight:500}
+
+  /* FEATURES */
+  .features{padding:80px 5vw;max-width:1100px;margin:0 auto}
+  .section-tag{font-size:12px;font-weight:700;color:var(--blue);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px}
+  .section-title{font-size:clamp(24px,3.5vw,38px);font-weight:800;line-height:1.2;letter-spacing:-.02em;margin-bottom:12px}
+  .section-sub{font-size:16px;color:var(--slate500);max-width:520px;line-height:1.6;margin-bottom:48px}
+  .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .feat-card{background:var(--white);border:1px solid var(--slate200);border-radius:14px;padding:24px;transition:box-shadow .2s,transform .2s}
+  .feat-card:hover{box-shadow:0 8px 32px rgba(26,86,219,.1);transform:translateY(-2px)}
+  .feat-icon{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:16px}
+  .feat-title{font-size:15px;font-weight:700;color:var(--slate900);margin-bottom:8px}
+  .feat-desc{font-size:13px;color:var(--slate500);line-height:1.6}
+
+  /* HOW IT WORKS */
+  .how{background:var(--slate50);padding:80px 5vw}
+  .how-inner{max-width:1100px;margin:0 auto}
+  .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;margin-top:48px}
+  .steps::before{content:'';position:absolute;top:22px;left:12%;right:12%;height:2px;background:var(--blue-mid);z-index:0}
+  .step{text-align:center;position:relative;z-index:1;padding:0 12px}
+  .step-circle{width:44px;height:44px;border-radius:50%;background:var(--blue);color:#fff;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;border:3px solid var(--white);box-shadow:0 0 0 2px var(--blue)}
+  .step-title{font-size:14px;font-weight:700;color:var(--slate900);margin-bottom:6px}
+  .step-desc{font-size:12px;color:var(--slate500);line-height:1.5}
+
+  /* STATUSES */
+  .statuses{padding:80px 5vw;max-width:1100px;margin:0 auto}
+  .status-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:40px}
+  .status-card{border-radius:14px;padding:22px;display:flex;align-items:flex-start;gap:14px}
+  .status-bullet{width:12px;height:12px;border-radius:50%;margin-top:4px;flex-shrink:0}
+  .status-card .s-title{font-size:15px;font-weight:700;margin-bottom:6px}
+  .status-card .s-desc{font-size:13px;line-height:1.6}
+
+  /* TEAM */
+  .team{background:var(--slate50);padding:80px 5vw;text-align:center}
+  .team-inner{max-width:900px;margin:0 auto}
+  .team-badge{display:inline-flex;align-items:center;gap:8px;background:var(--yellow-light);color:var(--yellow);border:1px solid #FDE68A;border-radius:999px;padding:6px 16px;font-size:12px;font-weight:700;margin-bottom:24px}
+  .team-title{font-size:clamp(24px,3.5vw,36px);font-weight:800;margin-bottom:12px}
+  .team-sub{font-size:15px;color:var(--slate500);line-height:1.6;max-width:560px;margin:0 auto 40px}
+  .bird{font-size:72px;margin-bottom:8px;display:block;animation:soar 3s ease-in-out infinite}
+  @keyframes soar{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-10px) rotate(2deg)}}
+
+  /* CTA */
+  .cta{background:linear-gradient(135deg,var(--blue) 0%,#2563EB 100%);padding:80px 5vw;text-align:center}
+  .cta h2{font-size:clamp(26px,4vw,42px);font-weight:800;color:#fff;margin-bottom:14px;letter-spacing:-.02em}
+  .cta p{font-size:16px;color:rgba(255,255,255,.78);margin-bottom:32px;max-width:480px;margin-left:auto;margin-right:auto}
+  .btn-white{background:#fff;color:var(--blue);border:none;border-radius:10px;padding:13px 32px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;transition:opacity .15s,transform .1s;display:inline-block}
+  .btn-white:hover{opacity:.92;transform:translateY(-1px)}
+
+  /* FOOTER */
+  footer{padding:28px 5vw;border-top:1px solid var(--slate200);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+  footer .logo-text{font-size:14px}
+  footer p{font-size:12px;color:var(--slate400)}
+
+  @media(max-width:768px){
+    .features-grid{grid-template-columns:1fr}
+    .steps{grid-template-columns:1fr 1fr}
+    .steps::before{display:none}
+    .status-grid{grid-template-columns:1fr}
+    .stats-grid{grid-template-columns:1fr;gap:32px}
+    .m-panels{grid-template-columns:1fr}
+    .m-stats{grid-template-columns:repeat(3,1fr)}
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">
+    <div class="logo-icon">O</div>
+    <span class="logo-text">Onfly <span>Conciliador</span></span>
+  </div>
+  <div style="display:flex;align-items:center;gap:14px">
+    <span class="nav-badge">Hackathon 2026</span>
+    <a href="https://github.com/jonathanaas/tucano_hipersonico_hackathon" target="_blank" class="nav-cta">Ver no GitHub</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-tag">
+    <span class="dot"></span>
+    Hackathon Onfly 2026 · Tucano Hipersônico
+  </div>
+  <h1>Conciliação de extratos<br><span class="accent">sem planilha, sem dor.</span></h1>
+  <p class="hero-sub">Importe dois CSVs, configure as colunas-chave e descubra em segundos onde estão as divergências financeiras.</p>
+  <div class="hero-btns">
+    <a href="https://github.com/jonathanaas/tucano_hipersonico_hackathon" target="_blank" class="btn-primary">🚀 Acessar o projeto</a>
+    <a href="#features" class="btn-secondary">Ver funcionalidades</a>
+  </div>
+</section>
+
+<!-- MOCKUP -->
+<div class="mockup-strip">
+  <div class="mockup">
+    <div class="mockup-bar">
+      <div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div>
+      <span>Onfly Conciliador — comparação em tempo real</span>
+    </div>
+    <div class="mockup-body">
+      <div class="m-header">
+        <div>
+          <div class="m-title">Comparador de Extratos</div>
+          <div class="m-subtitle">Cruzamento automático de dados financeiros</div>
+        </div>
+        <div style="background:var(--green-light);border:1px solid var(--green-mid);color:var(--green);font-size:11px;font-weight:700;padding:5px 12px;border-radius:8px">✓ 3 etapas simples</div>
+      </div>
+      <div class="m-panels">
+        <div class="m-panel">
+          <div class="m-panel-badge">
+            <div class="m-num" style="background:var(--blue)">1</div>
+            <span class="m-col-header" style="color:var(--blue)">Extrato — fonte principal</span>
+          </div>
+          <table class="m-table">
+            <thead><tr><th>ID</th><th>Descrição</th><th>Valor</th></tr></thead>
+            <tbody>
+              <tr><td>TXN-001</td><td>Hotel SP</td><td>R$ 540,00</td></tr>
+              <tr><td>TXN-002</td><td>Voo GRU-BSB</td><td>R$ 890,00</td></tr>
+              <tr><td>TXN-003</td><td>Taxi</td><td>R$ 42,00</td></tr>
+              <tr><td>TXN-004</td><td>Almoço cliente</td><td>R$ 180,00</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="m-panel">
+          <div class="m-panel-badge">
+            <div class="m-num" style="background:var(--green)">2</div>
+            <span class="m-col-header" style="color:var(--green)">2ª Fonte — sistema</span>
+          </div>
+          <table class="m-table">
+            <thead><tr><th>ID</th><th>Descrição</th><th>Valor</th></tr></thead>
+            <tbody>
+              <tr><td>TXN-001</td><td>Hotel SP</td><td>R$ 540,00</td></tr>
+              <tr><td>TXN-002</td><td>Voo GRU-BSB</td><td>R$ 875,00</td></tr>
+              <tr><td>TXN-005</td><td>Estacionamento</td><td>R$ 25,00</td></tr>
+              <tr><td>TXN-004</td><td>Almoço cliente</td><td>R$ 180,00</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="m-result">
+        <div style="font-size:12px;font-weight:700;color:var(--slate700);margin-bottom:8px">4 — Resultado da Comparação</div>
+        <div class="m-stats">
+          <div class="m-stat" style="background:var(--slate100)"><div class="m-stat-n" style="color:var(--slate700)">4</div><div class="m-stat-l" style="color:var(--slate500)">Total</div></div>
+          <div class="m-stat" style="background:var(--green-light)"><div class="m-stat-n" style="color:var(--green)">2</div><div class="m-stat-l" style="color:var(--green)">✓ Confere</div></div>
+          <div class="m-stat" style="background:var(--yellow-light)"><div class="m-stat-n" style="color:var(--yellow)">1</div><div class="m-stat-l" style="color:var(--yellow)">≠ Diverge</div></div>
+          <div class="m-stat" style="background:var(--red-light)"><div class="m-stat-n" style="color:var(--red)">1</div><div class="m-stat-l" style="color:var(--red)">← Só extrato</div></div>
+          <div class="m-stat" style="background:var(--blue-light)"><div class="m-stat-n" style="color:var(--blue)">1</div><div class="m-stat-l" style="color:var(--blue)">→ Só sistema</div></div>
+        </div>
+        <div class="status-row" style="background:var(--yellow-light);color:var(--yellow)">≠ Valor diferente · TXN-002 — Extrato: R$ 890,00 · Sistema: R$ 875,00 · Diferença: -R$ 15,00</div>
+        <div class="status-row" style="background:var(--red-light);color:var(--red)">← Só no extrato · TXN-003 — Taxi — R$ 42,00 · não encontrado na 2ª fonte</div>
+        <div class="status-row" style="background:var(--blue-light);color:var(--blue)">→ Só na 2ª fonte · TXN-005 — Estacionamento — R$ 25,00 · não encontrado no extrato</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STATS BAR -->
+<section class="stats-bar">
+  <div class="stats-grid">
+    <div class="stat-item"><div class="n">100%</div><div class="l">Processamento local — nenhum dado sai do navegador</div></div>
+    <div class="stat-item"><div class="n">&lt; 2s</div><div class="l">Para cruzar milhares de registros</div></div>
+    <div class="stat-item"><div class="n">4</div><div class="l">Status de divergência identificados automaticamente</div></div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="section-tag">Funcionalidades</div>
+  <h2 class="section-title">Tudo que o time financeiro precisava</h2>
+  <p class="section-sub">Do upload ao relatório exportado, sem configuração, sem servidor, sem complicação.</p>
+  <div class="features-grid">
+    <div class="feat-card">
+      <div class="feat-icon" style="background:var(--blue-light);font-size:22px">📁</div>
+      <div class="feat-title">Upload drag & drop</div>
+      <div class="feat-desc">Arraste seus CSVs ou clique para selecionar. O parse acontece instantaneamente no browser com PapaParse.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:var(--green-light);font-size:22px">🔑</div>
+      <div class="feat-title">Mapeamento flexível de colunas</div>
+      <div class="feat-desc">Escolha qual coluna é a chave de cruzamento e qual é o valor monetário — funciona com qualquer formato de CSV.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:var(--yellow-light);font-size:22px">⚡</div>
+      <div class="feat-title">Comparação instantânea</div>
+      <div class="feat-desc">Motor de comparação que cruza os dados em milissegundos, classificando cada registro em 4 categorias de status.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:var(--red-light);font-size:22px">🔍</div>
+      <div class="feat-title">Filtros por divergência</div>
+      <div class="feat-desc">Visualize apenas os registros que diferem, os que aparecem só em uma das fontes, ou os que conferem perfeitamente.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:var(--blue-light);font-size:22px">⬇</div>
+      <div class="feat-title">Exportação CSV</div>
+      <div class="feat-desc">Exporte o resultado completo da comparação com status, valores e diferenças em um clique, pronto para auditoria.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon" style="background:var(--green-light);font-size:22px">🔒</div>
+      <div class="feat-title">100% local e seguro</div>
+      <div class="feat-desc">Nenhum dado financeiro sai do seu navegador. Todo o processamento é client-side — privacidade total garantida.</div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how">
+  <div class="how-inner">
+    <div class="section-tag">Como funciona</div>
+    <h2 class="section-title">4 passos. Pronto.</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-circle">1</div>
+        <div class="step-title">Importe o extrato</div>
+        <div class="step-desc">Arraste o CSV da fonte principal — banco, cartão corporativo ou ERP.</div>
+      </div>
+      <div class="step">
+        <div class="step-circle">2</div>
+        <div class="step-title">Importe a 2ª fonte</div>
+        <div class="step-desc">Adicione o CSV de comparação — sistema interno, prestadora ou conciliadora.</div>
+      </div>
+      <div class="step">
+        <div class="step-circle">3</div>
+        <div class="step-title">Configure as colunas</div>
+        <div class="step-desc">Selecione a coluna-chave e, opcionalmente, a coluna de valor monetário.</div>
+      </div>
+      <div class="step">
+        <div class="step-circle">4</div>
+        <div class="step-title">Analise & exporte</div>
+        <div class="step-desc">Veja o relatório com divergências destacadas e exporte para o time.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATUSES -->
+<section class="statuses">
+  <div class="section-tag">Categorias de status</div>
+  <h2 class="section-title">Cada divergência, identificada</h2>
+  <p class="section-sub">O motor de comparação classifica cada registro automaticamente em uma das quatro categorias abaixo.</p>
+  <div class="status-grid">
+    <div class="status-card" style="background:var(--green-light);border:1px solid var(--green-mid)">
+      <div class="status-bullet" style="background:var(--green)"></div>
+      <div>
+        <div class="s-title" style="color:var(--green)">✓ Confere</div>
+        <div class="s-desc" style="color:#166534">O registro existe nas duas fontes e o valor bate dentro da tolerância de R$ 0,01. Tudo certo.</div>
+      </div>
+    </div>
+    <div class="status-card" style="background:var(--yellow-light);border:1px solid #FDE68A">
+      <div class="status-bullet" style="background:var(--yellow)"></div>
+      <div>
+        <div class="s-title" style="color:var(--yellow)">≠ Valor diferente</div>
+        <div class="s-desc" style="color:#92400E">A chave existe nas duas fontes mas os valores divergem. A diferença exata é exibida com sinal.</div>
+      </div>
+    </div>
+    <div class="status-card" style="background:var(--red-light);border:1px solid #FECACA">
+      <div class="status-bullet" style="background:var(--red)"></div>
+      <div>
+        <div class="s-title" style="color:var(--red)">← Só no extrato</div>
+        <div class="s-desc" style="color:#991B1B">O registro existe no extrato principal mas não foi encontrado na 2ª fonte. Pode ser um lançamento pendente.</div>
+      </div>
+    </div>
+    <div class="status-card" style="background:var(--blue-light);border:1px solid var(--blue-mid)">
+      <div class="status-bullet" style="background:var(--blue)"></div>
+      <div>
+        <div class="s-title" style="color:var(--blue)">→ Só na 2ª fonte</div>
+        <div class="s-desc" style="color:#1240AA">O registro existe na 2ª fonte mas não está no extrato. Pode ser um lançamento não reconhecido.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TEAM -->
+<section class="team">
+  <div class="team-inner">
+    <div class="team-badge">⚡ Hackathon Onfly 2026</div>
+    <span class="bird">🦜</span>
+    <h2 class="team-title">Tucano Hipersônico</h2>
+    <p class="team-sub">Projeto desenvolvido durante o Hackathon Onfly 2026. Construído em React + Vite com PapaParse — zero dependências de backend, deploy instantâneo, performance hipersônica.</p>
+    <a href="https://github.com/jonathanaas/tucano_hipersonico_hackathon" target="_blank" class="btn-primary" style="font-size:14px">
+      ⭐ Ver código no GitHub
+    </a>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <h2>Pronto para conciliar<br>sem dor de cabeça?</h2>
+  <p>Abra o projeto, importe seus CSVs e tenha o relatório de divergências em menos de 2 minutos.</p>
+  <a href="https://github.com/jonathanaas/tucano_hipersonico_hackathon" target="_blank" class="btn-white">🚀 Começar agora</a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="logo">
+    <div class="logo-icon">O</div>
+    <span class="logo-text">Onfly <span>Conciliador</span></span>
+  </div>
+  <p>Hackathon Onfly 2026 · Tucano Hipersônico · Feito com ♥ em React + Vite</p>
+  <a href="https://app.onfly.com" target="_blank" style="font-size:12px;color:var(--blue);font-weight:600;text-decoration:none">app.onfly.com ↗</a>
+</footer>
+
+</body>
+</html>
