@@ -3,242 +3,298 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * Motor de conciliação: fatura do cartão (CSV) × despesas Onfly (API).
  *
- * ⚠️  LÓGICA DE CONCILIAÇÃO A DEFINIR
- * ─────────────────────────────────────────────────────────────────────────────
- * Os campos reais da resposta da API ainda não foram confirmados.
- * Todo o código de matching está comentado com marcadores  TODO: CONCILIAÇÃO
- * para facilitar a implementação assim que o contrato estiver definido.
+ * Chaves de cruzamento:
+ *   Data (YYYY-MM-DD) + Valor (US float) + Nome do colaborador (sem acentos, minúsculo)
  *
- * O que já está pronto:
- *   - Estrutura de tipos (InvoiceRow, ReconciliationResult)
- *   - Esqueleto das funções públicas (reconcile, computeStats, toExportRows)
- *   - Placeholders documentados para cada decisão pendente
- *
- * O que falta (marcado com TODO):
- *   - Inspecionar a resposta real da API e mapear os campos corretos
- *   - Definir a(s) chave(s) de matching (data+valor? id do cartão? outro?)
- *   - Definir tolerâncias (valor, janela de datas)
- *   - Tratar estornos / duplicatas
+ * Regras:
+ *   - Toda data          → YYYY-MM-DD
+ *   - Todo valor         → float US (00.00), abs
+ *   - Todo nome/texto    → minúsculo, sem acentos, trim
+ *   - Despesas Onfly     → excluir tipo "Padrão"
+ *   - Estornos na fatura → sempre "only_invoice" com isEstorno=true
+ *   - Views              → "match" (Conciliado) | "only_invoice" (Somente na fatura)
  */
 
-// ─── Tipos (JSDoc) ─────────────────────────────────────────────────────────────
+// ─── Normalização ─────────────────────────────────────────────────────────────
 
 /**
- * @typedef {Object} InvoiceRow
- * Linha normalizada pelo invoice.parser.js (CSV da fatura do cartão).
- *
- * @property {string}      _id           - ID sintético "inv_N"
- * @property {Date|null}   _date         - Data da transação
- * @property {string}      _dateKey      - "YYYY-MM-DD"
- * @property {number|null} _valor        - Valor absoluto em BRL
- * @property {string}      _desc         - Descrição do estabelecimento
- * @property {string}      _tipo         - "Compra" | "Pix"
- * @property {string}      _colaborador  - Nome do colaborador
- * @property {string}      _cidade       - Cidade da transação
- * @property {any}         _raw          - Linha bruta do CSV
+ * Remove acentos, lowercase, trim — gera string ASCII comparável.
+ * @param {any} str
+ * @returns {string}
  */
+export function normalizeText(str) {
+  return String(str ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+}
 
 /**
- * @typedef {Object} ReconciliationResult
- *
- * @property {"match"|"match_fuzzy"|"only_invoice"|"only_onfly"} status
- *   - match         → encontrado com correspondência exata
- *   - match_fuzzy   → encontrado com critério relaxado (ex: ±1 dia)
- *   - only_invoice  → na fatura mas não encontrado no Onfly
- *   - only_onfly    → no Onfly mas não aparece na fatura
- *
- * @property {InvoiceRow|null}  invoice      - Linha da fatura
- * @property {any|null}         expenditure  - Item bruto da API Onfly
- * @property {number|null}      diff         - Diferença de valor (expenditure - invoice)
+ * Normaliza valor monetário → número float com 2 casas (padrão US 00.00).
+ * Suporta formatos: "1.234,56" (BR), "1234.56" (US), número direto.
+ * Sempre retorna valor absoluto (sem sinal).
+ * @param {any} val
+ * @returns {number|null}
  */
+export function normalizeAmount(val) {
+  if (val == null || val === "") return null;
+  if (typeof val === "number") return Math.abs(parseFloat(val.toFixed(2)));
+  const str = String(val).trim();
+  // Detecta formato BR: tem vírgula como decimal (ex: 1.234,56)
+  const hasBrFormat = str.includes(",");
+  const cleaned = hasBrFormat
+    ? str.replace(/[^\d,]/g, "").replace(",", ".")   // 1234,56 → 1234.56
+    : str.replace(/[^\d.]/g, "");                     // 1234.56 mantém
+  const n = parseFloat(cleaned);
+  return isNaN(n) ? null : Math.abs(parseFloat(n.toFixed(2)));
+}
+
+/**
+ * Normaliza data de qualquer formato → "YYYY-MM-DD".
+ * @param {string|Date|null} val
+ * @returns {string|null}
+ */
+export function normalizeDate(val) {
+  if (!val) return null;
+  if (val instanceof Date) {
+    return [
+      val.getFullYear(),
+      String(val.getMonth() + 1).padStart(2, "0"),
+      String(val.getDate()).padStart(2, "0"),
+    ].join("-");
+  }
+  const str = String(val).trim();
+  // Já está em YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.substring(0, 10);
+  // DD/MM/YYYY
+  const mDMY = str.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if (mDMY) return `${mDMY[3]}-${mDMY[2]}-${mDMY[1]}`;
+  // MM/DD/YY ou M/D/YY
+  const mMDY = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+  if (mMDY) {
+    const yr = mMDY[3].length === 2 ? 2000 + parseInt(mMDY[3]) : parseInt(mMDY[3]);
+    return `${yr}-${String(mMDY[1]).padStart(2, "0")}-${String(mMDY[2]).padStart(2, "0")}`;
+  }
+  return null;
+}
+
+// ─── Helpers internos ─────────────────────────────────────────────────────────
+
+/**
+ * Extrai a data de uma despesa Onfly (tenta vários campos).
+ * @param {any} exp
+ * @returns {string|null}
+ */
+function expDate(exp) {
+  return normalizeDate(
+    exp.occurrence_date ?? exp.date ?? exp.created_at ?? null
+  );
+}
+
+/**
+ * Extrai o valor de uma despesa Onfly (tenta vários campos).
+ * @param {any} exp
+ * @returns {number|null}
+ */
+function expAmount(exp) {
+  return normalizeAmount(exp.amount ?? exp.value ?? exp.total ?? null);
+}
+
+/**
+ * Extrai o nome normalizado do colaborador de uma despesa Onfly.
+ * @param {any} exp
+ * @returns {string}
+ */
+function expName(exp) {
+  return normalizeText(exp.user?.name ?? "");
+}
+
+/**
+ * Verifica se o tipo da despesa Onfly é "Padrão" (deve ser excluído).
+ * @param {any} exp
+ * @returns {boolean}
+ */
+function isTypePadrao(exp) {
+  const tipo = normalizeText(exp.expenditureType?.name ?? "");
+  return tipo === "padrao" || tipo === "";
+}
 
 // ─── Motor principal ──────────────────────────────────────────────────────────
 
 /**
  * Cruza linhas da fatura com despesas da API Onfly.
  *
- * @param   {InvoiceRow[]} invoiceRows    - Saída do invoice.parser.js
- * @param   {any[]}        expenditures   - Saída bruta do expenditures.service.js
+ * Algoritmo:
+ *  1. Filtra Onfly: remove tipo "Padrão"
+ *  2. Indexa Onfly por (data | nome_normalizado)
+ *  3. Para cada linha da fatura:
+ *     - Estornos: always only_invoice
+ *     - Compras/Pix: busca candidatos por data+nome, escolhe o de menor
+ *       diferença de valor dentro da tolerância
+ *  4. Monta resultados
+ *
+ * @param   {import('./invoice.parser.js').InvoiceRow[]} invoiceRows
+ * @param   {any[]}  expenditures - Saída bruta do expenditures.service.js
  * @returns {ReconciliationResult[]}
  */
 export function reconcile(invoiceRows, expenditures) {
-  // TODO: CONCILIAÇÃO — inspecionar a resposta real da API antes de implementar.
-  //
-  // Perguntas a responder com a resposta real:
-  //
-  //   1. Qual campo representa a DATA da despesa?
-  //      Candidatos vistos no endpoint: occurrence_date, date, created_at
-  //      → confirmar formato: "YYYY-MM-DD"? timestamp?
-  //
-  //   2. Qual campo representa o VALOR?
-  //      Candidatos: amount, value, total
-  //      → é positivo ou negativo? tem casas decimais como número ou string?
-  //
-  //   3. Existe algum campo de identificação do CARTÃO (últimos dígitos)?
-  //      A fatura tem "Final do Cartão" — se a API tiver campo equivalente,
-  //      podemos usar como chave primária e não depender só de data+valor.
-  //
-  //   4. Como identificar que é uma transação de CARTÃO (e não Pix, km, etc)?
-  //      Candidatos: expenditureType.name, type, payment_type
-  //
-  //   5. Estornos (chargebacks) — como distinguir da despesa original?
-  //      Verificar se há campo is_reversal, status, ou sinal negativo no valor.
-  //
-  // Esqueleto de implementação (descomentar e ajustar quando pronto):
-  //
-  // ── Passo 1: indexar despesas por data para lookup O(1) ──────────────────
-  //
-  // const byDate = new Map();
-  // for (const exp of expenditures) {
-  //   // TODO: substituir "exp.date" pelo campo real da API
-  //   const key = exp.date?.substring(0, 10);
-  //   if (!byDate.has(key)) byDate.set(key, []);
-  //   byDate.get(key).push(exp);
-  // }
-  //
-  // ── Passo 2: para cada linha da fatura, tentar encontrar match ───────────
-  //
-  // const results      = [];
-  // const matchedIds   = new Set();
-  // const TOLERANCE_BRL = 0.02; // R$ 0,02 de tolerância de arredondamento
-  //
-  // for (const row of invoiceRows) {
-  //   // Tentativa 1 — data exata + valor exato
-  //   const candidates = byDate.get(row._dateKey) ?? [];
-  //   let match = candidates.find(exp =>
-  //     !matchedIds.has(exp.id) &&
-  //     // TODO: substituir "exp.amount" pelo campo real da API
-  //     Math.abs(exp.amount - row._valor) <= TOLERANCE_BRL
-  //   );
-  //   let status = "match";
-  //
-  //   // Tentativa 2 — ±1 dia (processamento noturno das operadoras)
-  //   // if (!match) {
-  //   //   match = buscarEmDiaAdjacente(byDate, row, matchedIds, TOLERANCE_BRL);
-  //   //   if (match) status = "match_fuzzy";
-  //   // }
-  //
-  //   if (!match) status = "only_invoice";
-  //   if (match)  matchedIds.add(match.id);
-  //
-  //   results.push({
-  //     status,
-  //     invoice:     row,
-  //     expenditure: match ?? null,
-  //     // TODO: substituir "match.amount" pelo campo real da API
-  //     diff: match ? +(match.amount - row._valor).toFixed(2) : null,
-  //   });
-  // }
-  //
-  // ── Passo 3: despesas Onfly sem correspondência na fatura ─────────────────
-  //
-  // for (const exp of expenditures) {
-  //   if (!matchedIds.has(exp.id)) {
-  //     results.push({ status: "only_onfly", invoice: null, expenditure: exp, diff: null });
-  //   }
-  // }
-  //
-  // return results;
+  const AMOUNT_TOLERANCE = 0.05; // R$ 0,05 — margem de arredondamento
 
-  // Retorno vazio enquanto a lógica não está implementada.
-  // Remove esta linha quando descomentar o código acima.
-  return _placeholderResults(invoiceRows, expenditures);
-}
+  // ── Passo 1: filtrar e indexar despesas Onfly ─────────────────────────────
+  const onFlyFiltered = expenditures.filter((e) => !isTypePadrao(e));
 
-// ─── Placeholder ──────────────────────────────────────────────────────────────
-// Remove esta função quando a lógica de conciliação estiver implementada.
+  console.log(
+    `[reconcile] Total Onfly: ${expenditures.length} | Após filtro (sem Padrão): ${onFlyFiltered.length}`
+  );
 
-function _placeholderResults(invoiceRows, expenditures) {
-  // Marca tudo como "pendente de implementação" para que a UI já funcione
-  // e mostre os dados brutos antes do matching ser definido.
-  const invoicePending = invoiceRows.map((row) => ({
-    status:      "only_invoice",
-    invoice:     row,
-    expenditure: null,
-    diff:        null,
-  }));
+  // Índice: "YYYY-MM-DD|nome_normalizado" → lista de { exp, amount }
+  const byDateName = new Map();
+  for (const e of onFlyFiltered) {
+    const date   = expDate(e);
+    const name   = expName(e);
+    const amount = expAmount(e);
+    if (!date || amount == null) continue;
+    const key = `${date}|${name}`;
+    if (!byDateName.has(key)) byDateName.set(key, []);
+    byDateName.get(key).push({ exp: e, amount });
+  }
 
-  const onflypending = expenditures.map((exp) => ({
-    status:      "only_onfly",
-    invoice:     null,
-    expenditure: exp,
-    diff:        null,
-  }));
+  // ── Passo 2: cruzar fatura com Onfly ─────────────────────────────────────
+  const results       = [];
+  const matchedExpIds = new Set();
 
-  return [...invoicePending, ...onflypending];
+  for (const row of invoiceRows) {
+    // Estornos nunca são conciliados — só exibidos na fatura
+    if (row._isEstorno) {
+      results.push({ status: "only_invoice", invoice: row, expenditure: null, diff: null });
+      continue;
+    }
+
+    const date   = row._dateKey;
+    const name   = normalizeText(row._colaborador);
+    const amount = row._valor;
+    const key    = `${date}|${name}`;
+
+    const candidates = byDateName.get(key) ?? [];
+
+    // Melhor match por valor (dentro da tolerância)
+    let bestMatch  = null;
+    let bestDiff   = Infinity;
+    // Melhor candidato divergente (mesmo dia+nome mas valor fora da tolerância)
+    let bestDiverg = null;
+    let bestDivDiff = Infinity;
+
+    for (const c of candidates) {
+      if (matchedExpIds.has(c.exp.id)) continue;
+      const diff = Math.abs(c.amount - amount);
+      if (diff <= AMOUNT_TOLERANCE && diff < bestDiff) {
+        bestMatch = c;
+        bestDiff  = diff;
+      } else if (diff > AMOUNT_TOLERANCE && diff < bestDivDiff) {
+        bestDiverg  = c;
+        bestDivDiff = diff;
+      }
+    }
+
+    if (bestMatch) {
+      matchedExpIds.add(bestMatch.exp.id);
+      const diff = parseFloat((bestMatch.amount - amount).toFixed(2));
+      results.push({ status: "match", invoice: row, expenditure: bestMatch.exp, diff });
+    } else if (bestDiverg) {
+      matchedExpIds.add(bestDiverg.exp.id);
+      const diff = parseFloat((bestDiverg.amount - amount).toFixed(2));
+      results.push({ status: "divergent", invoice: row, expenditure: bestDiverg.exp, diff });
+    } else {
+      results.push({ status: "only_invoice", invoice: row, expenditure: null, diff: null });
+    }
+  }
+
+  // ── Passo 3: despesas Onfly sem correspondência → only_onfly ─────────────
+  for (const e of onFlyFiltered) {
+    if (!matchedExpIds.has(e.id)) {
+      results.push({ status: "only_onfly", invoice: null, expenditure: e, diff: null });
+    }
+  }
+
+  console.log(
+    `[reconcile] match: ${results.filter((r) => r.status === "match").length}` +
+    ` | divergent: ${results.filter((r) => r.status === "divergent").length}` +
+    ` | only_invoice: ${results.filter((r) => r.status === "only_invoice").length}` +
+    ` | only_onfly: ${results.filter((r) => r.status === "only_onfly").length}`
+  );
+
+  return results;
 }
 
 // ─── Estatísticas ─────────────────────────────────────────────────────────────
 
 /**
- * Computa totais e taxa de conciliação a partir dos resultados.
- *
- * @param   {ReconciliationResult[]} results
+ * @param {ReconciliationResult[]} results
  * @returns {object}
  */
 export function computeStats(results) {
-  const count = (status) => results.filter((r) => r.status === status).length;
+  const matched      = results.filter((r) => r.status === "match");
+  const divergent    = results.filter((r) => r.status === "divergent");
+  const onlyInvoice  = results.filter((r) => r.status === "only_invoice");
+  const onlyOnfly    = results.filter((r) => r.status === "only_onfly");
+  const estornos     = onlyInvoice.filter((r) => r.invoice?._isEstorno);
 
-  const match       = count("match");
-  const matchFuzzy  = count("match_fuzzy");
-  const onlyInvoice = count("only_invoice");
-  const onlyOnfly   = count("only_onfly");
-  const total       = results.length;
+  // Total = itens da fatura (excluindo only_onfly)
+  const invoiceTotal = matched.length + divergent.length + onlyInvoice.length;
 
-  // TODO: CONCILIAÇÃO — substituir pelos campos reais da API nos cálculos abaixo.
-  const totalInvoiceAmount = results.reduce(
-    (acc, r) => acc + (r.invoice?._valor ?? 0), 0
-  );
-  const totalOnflyAmount = results.reduce(
-    (acc, r) => acc + (/* r.expenditure?.amount ?? */ 0), 0
-    // TODO: substituir 0 pelo campo real: r.expenditure?.amount ?? 0
-  );
+  const totalInvoiceAmount = [...matched, ...divergent, ...onlyInvoice]
+    .reduce((acc, r) => acc + (r.invoice?._valor ?? 0), 0);
+
+  const totalOnflyAmount = [...matched, ...divergent].reduce((acc, r) => {
+    return acc + (normalizeAmount(r.expenditure?.amount ?? r.expenditure?.value ?? r.expenditure?.total ?? 0) ?? 0);
+  }, 0);
 
   return {
-    total,
-    match,
-    matchFuzzy,
-    onlyInvoice,
-    onlyOnfly,
-    conciliationRate:   total > 0 ? Math.round(((match + matchFuzzy) / total) * 100) : 0,
-    totalInvoiceAmount: +totalInvoiceAmount.toFixed(2),
-    totalOnflyAmount:   +totalOnflyAmount.toFixed(2),
-    gap:                +(totalOnflyAmount - totalInvoiceAmount).toFixed(2),
+    total:              invoiceTotal,
+    matched:            matched.length,
+    divergent:          divergent.length,
+    onlyInvoice:        onlyInvoice.length,
+    onlyOnfly:          onlyOnfly.length,
+    estornos:           estornos.length,
+    conciliationRate:   invoiceTotal > 0 ? Math.round((matched.length / invoiceTotal) * 100) : 0,
+    totalInvoiceAmount: parseFloat(totalInvoiceAmount.toFixed(2)),
+    totalOnflyAmount:   parseFloat(totalOnflyAmount.toFixed(2)),
+    gap:                parseFloat((totalOnflyAmount - totalInvoiceAmount).toFixed(2)),
   };
 }
 
 // ─── Exportação CSV ───────────────────────────────────────────────────────────
 
 /**
- * Converte resultados para linhas planas (para Papa.unparse → download).
- *
- * @param   {ReconciliationResult[]} results
+ * @param {ReconciliationResult[]} results
  * @returns {object[]}
  */
 export function toExportRows(results) {
-  const STATUS_LABELS = {
-    match:        "✓ Conciliado",
-    match_fuzzy:  "≈ Conciliado (±1 dia)",
-    only_invoice: "⚠ Só na fatura",
-    only_onfly:   "← Só no Onfly",
-  };
+  return results.map((r) => {
+    const tipo = r.invoice?._isEstorno ? "Estorno" : (r.invoice?._tipo ?? "");
+    const expAmount = normalizeAmount(
+      r.expenditure?.amount ?? r.expenditure?.value ?? r.expenditure?.total ?? null
+    );
 
-  return results.map((r) => ({
-    status:           STATUS_LABELS[r.status] ?? r.status,
-    data_fatura:      r.invoice?._dateKey ?? "",
-    descricao_fatura: r.invoice?._desc ?? "",
-    colaborador:      r.invoice?._colaborador ?? "",
-    valor_fatura:     r.invoice?._valor != null ? r.invoice._valor.toFixed(2) : "",
-
-    // TODO: CONCILIAÇÃO — substituir pelos campos reais da API.
-    data_onfly:       r.expenditure?.date ?? "",               // TODO: campo real
-    descricao_onfly:  r.expenditure?.description ?? "",        // TODO: campo real
-    categoria_onfly:  r.expenditure?.expenditureType?.name ?? "", // TODO: campo real
-    centro_custo:     r.expenditure?.costCenter?.name ?? "",   // TODO: campo real
-    rdv:              r.expenditure?.rdv?.id ?? "",            // TODO: campo real
-    valor_onfly:      r.expenditure?.amount != null            // TODO: campo real
-                        ? Number(r.expenditure.amount).toFixed(2)
-                        : "",
-    diferenca:        r.diff != null ? r.diff.toFixed(2) : "",
-  }));
+    return {
+      status:              r.status === "match" ? "✓ Conciliado" : "← Somente na fatura",
+      tipo_fatura:         tipo,
+      data_fatura:         r.invoice?._dateKey ?? "",
+      colaborador:         r.invoice?._colaborador ?? "",
+      final_cartao:        r.invoice?._finalCartao ?? "",
+      descricao_fatura:    r.invoice?._desc ?? "",
+      valor_fatura:        r.invoice?._valor != null ? r.invoice._valor.toFixed(2) : "",
+      // Onfly
+      data_onfly:          expDate(r.expenditure) ?? "",
+      descricao_onfly:     r.expenditure?.description ?? "",
+      tipo_onfly:          r.expenditure?.expenditureType?.name ?? "",
+      categoria_onfly:     r.expenditure?.expenditureType?.name ?? "",
+      centro_custo:        r.expenditure?.costCenter?.name ?? "",
+      rdv:                 r.expenditure?.rdv?.id ?? "",
+      valor_onfly:         expAmount != null ? expAmount.toFixed(2) : "",
+      diferenca:           r.diff != null ? r.diff.toFixed(2) : "",
+    };
+  });
 }

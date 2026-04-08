@@ -4,45 +4,13 @@
  * Faz o parse do CSV da fatura do cartão corporativo (Viagens_Internas).
  * Detecta automaticamente os campos e normaliza para InvoiceRow[].
  *
- * Também exporta `detectFileType` para validação no upload.
+ * Campos extras suportados:
+ *   - Final do Cartão  → _finalCartao (últimos dígitos)
+ *   - Estornado        → _isEstorno (bool); estornos são incluídos, não filtrados
  */
 
 import * as Papa from "papaparse";
-
-// ─── Utilitários ──────────────────────────────────────────────────────────────
-
-function parseDate(str) {
-  if (!str) return null;
-  const s = String(str).trim();
-
-  // m/d/yy hh:mm  ou  m/d/yy  (formato Viagens_Internas)
-  const m1 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
-  if (m1) {
-    const yr = m1[3].length === 2 ? 2000 + parseInt(m1[3]) : parseInt(m1[3]);
-    const date = new Date(yr, parseInt(m1[1]) - 1, parseInt(m1[2]));
-    return { date, key: toDateKey(date) };
-  }
-
-  // dd/mm/yyyy
-  const m2 = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
-  if (m2) {
-    const date = new Date(parseInt(m2[3]), parseInt(m2[2]) - 1, parseInt(m2[1]));
-    return { date, key: toDateKey(date) };
-  }
-
-  return null;
-}
-
-function toDateKey(d) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-function parseAmount(str) {
-  if (str == null || str === "") return null;
-  const cleaned = String(str).replace(/[^\d,.-]/g, "").replace(",", ".");
-  const n = parseFloat(cleaned);
-  return isNaN(n) ? null : Math.abs(n);
-}
+import { normalizeAmount, normalizeDate } from "./reconciliation.js";
 
 // ─── Detecção de tipo de arquivo ──────────────────────────────────────────────
 
@@ -52,7 +20,9 @@ function parseAmount(str) {
  * @returns {"invoice" | "unknown"}
  */
 export function detectInvoiceFile(headers) {
-  const h = headers.map((x) => String(x).normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase());
+  const h = headers.map((x) =>
+    String(x).normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase()
+  );
   const hasColaborador = h.some((c) => c.includes("colaborador"));
   const hasSaldo       = h.some((c) => c.includes("saldo"));
   const hasFinalCartao = h.some((c) => c.includes("final") || c.includes("cartao") || c.includes("cart"));
@@ -60,11 +30,12 @@ export function detectInvoiceFile(headers) {
   return "unknown";
 }
 
-// ─── Parser principal ─────────────────────────────────────────────────────────
+// ─── Detecção de colunas ──────────────────────────────────────────────────────
 
 /**
  * Detecta índices de colunas de forma flexível (suporta encoding corrompido).
  * @param {string[]} headers
+ * @returns {object}
  */
 function detectColumns(headers) {
   const norm = headers.map((h) =>
@@ -76,16 +47,26 @@ function detectColumns(headers) {
   return {
     iData:        find(["data"]),
     iTipo:        find(["tipo"]),
-    iDesc:        find(["descri", "ao"]),        // "descrição" normalizado
+    iDesc:        find(["descri", "ao"]),             // "descrição" normalizado
     iColaborador: find(["colaborador"]),
-    iValor:       find([" valor", "valor"]),      // pode ter espaço no header
+    iValor:       find([" valor", "valor"]),
     iCidade:      find(["cidade"]),
     iEstornado:   find(["estornado"]),
+    iFinalCartao: find(["final", "cartao", "cart"]),  // últimos dígitos do cartão
   };
 }
 
+// ─── Parser principal ─────────────────────────────────────────────────────────
+
 /**
  * Faz o parse do arquivo CSV da fatura.
+ *
+ * Retorna InvoiceRow[] com:
+ *   _id, _date, _dateKey, _valor, _desc, _tipo, _colaborador,
+ *   _cidade, _finalCartao, _isEstorno, _raw, _headers
+ *
+ * Estornos: incluídos com _isEstorno=true (não são filtrados).
+ * Tipos fora de "Compra"/"Pix": filtrados (transferências, saques, etc.).
  *
  * @param {File} file
  * @returns {Promise<{ rows: InvoiceRow[], errors: string[] }>}
@@ -101,7 +82,7 @@ export function parseInvoiceCsv(file) {
           return reject(new Error("Arquivo CSV vazio ou inválido."));
         }
 
-        const headers = data[0].map((h) => String(h));
+        const headers  = data[0].map((h) => String(h));
         const fileType = detectInvoiceFile(headers);
 
         if (fileType !== "invoice") {
@@ -120,39 +101,54 @@ export function parseInvoiceCsv(file) {
         data.slice(1).forEach((row, i) => {
           if (!row.some((c) => c !== "" && c != null)) return; // linha vazia
 
-          const tipo = String(row[cols.iTipo] ?? "").trim().toLowerCase();
+          const tipoRaw = String(row[cols.iTipo] ?? "").trim().toLowerCase();
 
-          // Filtra apenas compras e pix (ignora estornos, transferências, saques)
-          if (!["compra", "pix"].includes(tipo)) return;
+          // Aceita somente compras e pix (ignora transferências, saques, etc.)
+          if (!["compra", "pix"].includes(tipoRaw)) return;
 
-          // Ignora estornos marcados
-          const estornado = String(row[cols.iEstornado] ?? "").trim().toLowerCase();
-          if (estornado === "sim") return;
+          // Estorno: incluir, mas marcar
+          const estornadoRaw = String(row[cols.iEstornado] ?? "").trim().toLowerCase();
+          const isEstorno    = estornadoRaw === "sim";
 
-          const parsedDate = parseDate(row[cols.iData]);
-          if (!parsedDate) {
-            errors.push(`Linha ${i + 2}: data inválida "${row[cols.iData]}"`);
+          // Data
+          const dateStr = row[cols.iData];
+          const dateKey = normalizeDate(dateStr);
+          if (!dateKey) {
+            errors.push(`Linha ${i + 2}: data inválida "${dateStr}"`);
             return;
           }
+          const dateParsed = new Date(dateKey + "T00:00:00");
 
-          const valor = parseAmount(row[cols.iValor]);
+          // Valor (absoluto, padrão US)
+          const valor = normalizeAmount(row[cols.iValor]);
           if (valor == null) {
             errors.push(`Linha ${i + 2}: valor inválido "${row[cols.iValor]}"`);
             return;
           }
 
-          const rawDesc    = String(row[cols.iDesc] ?? "").trim();
-          const descClean  = rawDesc.replace(/\s+/g, " ").substring(0, 80);
+          // Descrição
+          const rawDesc   = String(row[cols.iDesc] ?? "").trim();
+          const descClean = rawDesc.replace(/\s+/g, " ").substring(0, 80);
+
+          // Final do cartão (últimos dígitos)
+          const finalCartao = cols.iFinalCartao >= 0
+            ? String(row[cols.iFinalCartao] ?? "").trim().replace(/\D/g, "").slice(-4)
+            : "";
+
+          // Colaborador (nome original, normalização feita na conciliação)
+          const colaborador = String(row[cols.iColaborador] ?? "").trim();
 
           rows.push({
             _id:          `inv_${i}`,
-            _date:        parsedDate.date,
-            _dateKey:     parsedDate.key,
-            _valor:       valor,
+            _date:        dateParsed,
+            _dateKey:     dateKey,                           // YYYY-MM-DD
+            _valor:       valor,                             // float, abs
             _desc:        descClean,
-            _tipo:        String(row[cols.iTipo] ?? "").trim(),
-            _colaborador: String(row[cols.iColaborador] ?? "").trim(),
+            _tipo:        String(row[cols.iTipo] ?? "").trim(), // original: "Compra" | "Pix"
+            _isEstorno:   isEstorno,                         // bool
+            _colaborador: colaborador,
             _cidade:      cols.iCidade >= 0 ? String(row[cols.iCidade] ?? "").trim() : "",
+            _finalCartao: finalCartao,                       // ex: "1234"
             _raw:         row,
             _headers:     headers,
           });
