@@ -125,13 +125,21 @@ export async function fetchExpenditurePage(filters) {
     },
   });
 
-  // A API pode retornar { data: [...], meta: { total, current_page, per_page } }
-  // ou { data: [...], total: N }.
-  // Tratamos os dois formatos defensivamente até confirmar o contrato real.
-  const items   = raw?.data   ?? raw?.items   ?? (Array.isArray(raw) ? raw : []);
-  const meta    = raw?.meta   ?? raw?.pagination ?? {};
-  const total   = meta.total  ?? raw?.total   ?? items.length;
-  const curPage = meta.current_page ?? meta.page ?? page;
+  // A API retorna { data: [...], meta: { pagination: { total, current_page, per_page, last_page } } }
+  const items      = raw?.data ?? raw?.items ?? (Array.isArray(raw) ? raw : []);
+  const pagination = raw?.meta?.pagination ?? raw?.meta ?? raw?.pagination ?? {};
+  const total      = pagination.total      ?? raw?.total   ?? items.length;
+  const lastPage   = pagination.last_page  ?? pagination.lastPage ?? null;
+  const curPage    = pagination.current_page ?? pagination.page ?? page;
+
+  const hasMore = lastPage != null
+    ? curPage < lastPage
+    : curPage * perPage < total;
+
+  console.group(`[expenditures.service] Página ${curPage}/${lastPage ?? "?"}`);
+  console.log("pagination:", pagination);
+  console.log(`Itens nesta página: ${items.length} | Total geral: ${total} | hasMore: ${hasMore}`);
+  console.groupEnd();
 
   return {
     data:    items,                                // bruto — normalização a definir

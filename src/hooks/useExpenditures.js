@@ -56,13 +56,14 @@ export function useExpenditures() {
 
     try {
       const result = await fetchAllExpenditures(
-        filters.startDate,
-        filters.endDate,
-        { type: filters.type },
-        (loaded, total) => {
-          if (!abortRef.current) {
-            setProgress({ loaded, total });
-          }
+        { startDate: filters.startDate, endDate: filters.endDate },
+        {
+          onProgress: (loaded, total) => {
+            console.log(`[useExpenditures] Progresso: ${loaded}/${total}`);
+            if (!abortRef.current) {
+              setProgress({ loaded, total });
+            }
+          },
         }
       );
 
