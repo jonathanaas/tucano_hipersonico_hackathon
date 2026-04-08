@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/expense/:path*",
+      "destination": "https://api.onfly.com/expense/:path*"
+    },
+    {
+      "source": "/blue/:path*",
+      "destination": "https://api.onfly.com/blue/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

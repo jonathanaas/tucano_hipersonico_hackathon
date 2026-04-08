@@ -2,13 +2,15 @@
  * onfly.client.js
  * ─────────────────────────────────────────────────────────────────────────────
  * Cliente HTTP base para a API da Onfly.
- * Lê credenciais de variáveis de ambiente Vite (VITE_ONFLY_*).
+ * Lê credenciais de variáveis de ambiente Vite (VITE_PUBLIC_ONFLY_*).
  * Todas as requisições passam por aqui — auth header, timeout, retry e
  * normalização de erros são tratados uma única vez.
  */
 
-const BASE_URL  = import.meta.env.VITE_ONFLY_BASE_URL?.replace(/\/$/, "");
-const API_TOKEN = import.meta.env.VITE_ONFLY_API_TOKEN;
+// BASE_URL vazio → usa o host atual (Vercel rewrites server-side para api.onfly.com)
+// BASE_URL preenchido → usado no dev via Vite proxy (http://localhost:3000)
+const BASE_URL  = (import.meta.env.VITE_PUBLIC_ONFLY_BASE_URL ?? "").replace(/\/$/, "");
+const API_TOKEN = import.meta.env.VITE_PUBLIC_ONFLY_API_TOKEN;
 
 // ─── Erros tipados ────────────────────────────────────────────────────────────
 
@@ -45,7 +47,7 @@ export class OnflyNotFoundError extends OnflyApiError {
 function buildHeaders(extra = {}) {
   if (!API_TOKEN) {
     throw new OnflyApiError(
-      "VITE_ONFLY_API_TOKEN não configurado. Verifique o arquivo .env.",
+      "VITE_PUBLIC_ONFLY_API_TOKEN não configurado. Verifique o arquivo .env.",
       0
     );
   }
@@ -90,14 +92,10 @@ async function parseResponse(res, path) {
  * @returns {Promise<any>}
  */
 export async function request(method, path, { params, body, timeout = 20_000, retries = 2 } = {}) {
-  if (!BASE_URL) {
-    throw new OnflyApiError(
-      "VITE_ONFLY_BASE_URL não configurado. Verifique o arquivo .env.",
-      0
-    );
-  }
-
-  const url = new URL(`${BASE_URL}${path}`);
+  // Em produção (Vercel), BASE_URL é vazio e usamos URL relativa ao host atual.
+  // Em dev, BASE_URL aponta para o Vite proxy (http://localhost:3000).
+  const urlStr = BASE_URL ? `${BASE_URL}${path}` : path;
+  const url = new URL(urlStr, globalThis.location?.origin ?? "http://localhost:3000");
   if (params) {
     Object.entries(params).forEach(([k, v]) => {
       if (v != null && v !== "") url.searchParams.set(k, String(v));
