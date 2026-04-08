@@ -12,6 +12,12 @@
 const BASE_URL  = (import.meta.env.VITE_PUBLIC_ONFLY_BASE_URL ?? "").replace(/\/$/, "");
 const API_TOKEN = import.meta.env.VITE_PUBLIC_ONFLY_API_TOKEN;
 
+console.info(
+  "%c[onfly.client] config",
+  "color:#1A56DB;font-weight:bold",
+  { BASE_URL: BASE_URL || "(relativo — modo Vercel)", token: API_TOKEN ? `${API_TOKEN.slice(0, 20)}…` : "❌ NÃO CONFIGURADO" }
+);
+
 // ─── Erros tipados ────────────────────────────────────────────────────────────
 
 export class OnflyApiError extends Error {
@@ -109,11 +115,20 @@ export async function request(method, path, { params, body, timeout = 20_000, re
     ...(body != null ? { body: JSON.stringify(body) } : {}),
   };
 
+  console.debug(`%c[onfly.client] → ${method} ${url.toString()}`, "color:#64748B");
+
   let attempt = 0;
   while (true) {
     try {
+      const t0  = performance.now();
       const res = await fetch(url.toString(), init);
-      return await parseResponse(res, path);
+      const ms  = Math.round(performance.now() - t0);
+      const parsed = await parseResponse(res, path);
+      console.debug(
+        `%c[onfly.client] ← ${res.status} ${url.pathname} (${ms}ms)`,
+        `color:${res.ok ? "#16A34A" : "#DC2626"}`
+      );
+      return parsed;
     } catch (err) {
       // Não retenta erros de autenticação ou "not found"
       const isRetryable =
@@ -124,20 +139,27 @@ export async function request(method, path, { params, body, timeout = 20_000, re
       if (isRetryable && attempt < retries) {
         attempt++;
         const delay = 500 * 2 ** (attempt - 1); // 500ms, 1000ms, …
+        console.warn(
+          `[onfly.client] ⚠ erro na tentativa ${attempt}/${retries} — retry em ${delay}ms`,
+          { path, erro: err.message, status: err.status }
+        );
         await new Promise((r) => setTimeout(r, delay));
         continue;
       }
 
       // Rewrap erros de rede nativos
       if (!(err instanceof OnflyApiError)) {
-        throw new OnflyApiError(
+        const wrapped = new OnflyApiError(
           err.name === "TimeoutError"
             ? `Timeout após ${timeout}ms`
             : `Erro de rede: ${err.message}`,
           0
         );
+        console.error("[onfly.client] ✖ erro de rede", { path, url: url.toString(), erro: err.message, tipo: err.name });
+        throw wrapped;
       }
 
+      console.error("[onfly.client] ✖ erro da API", { path, status: err.status, message: err.message, body: err.body });
       throw err;
     }
   }

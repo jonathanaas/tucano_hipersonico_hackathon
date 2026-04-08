@@ -206,7 +206,15 @@ export default function App() {
   // Usa allInvoiceRows (não filtrado) para decidir se a API deve ser chamada.
   // A filtragem por período acontece na reconciliação via invoiceRowsRef.
   useEffect(() => {
-    if (!dateStart || !dateEnd || !allInvoiceRows?.length) return;
+    if (!dateStart || !dateEnd || !allInvoiceRows?.length) {
+      console.log("[App] auto-trigger ignorado", { dateStart, dateEnd, csvRows: allInvoiceRows?.length ?? 0 });
+      return;
+    }
+    console.group("%c[App] Pipeline iniciado", "color:#1A56DB;font-weight:bold");
+    console.log("Período:", dateStart, "→", dateEnd);
+    console.log("CSV total:", allInvoiceRows.length, "linhas");
+    console.log("CSV filtrado pelo período:", invoiceRowsRef.current?.length ?? "—");
+    console.groupEnd();
     setResults(null);
     setStats(null);
     fetchExp({ startDate: dateStart, endDate: dateEnd });
@@ -244,9 +252,27 @@ export default function App() {
       } : null,
     });
 
+    console.group("%c[App] Reconciliando", "color:#16A34A;font-weight:bold");
+    console.log("Despesas Onfly recebidas:", expenditures.length);
+    console.log("Linhas da fatura no período:", rows.length);
+    if (expenditures.length > 0) {
+      const sample = expenditures[0];
+      console.log("Onfly[0] sample:", {
+        id: sample.id, date: sample.date ?? sample.occurrence_date,
+        amount: sample.amount, user: sample.user?.data?.name ?? sample.user?.name,
+        tipo: sample.expenditureType?.data?.name ?? sample.expenditureType?.name ?? "(sem tipo)",
+      });
+    }
+    if (rows.length > 0) {
+      const sample = rows.find(r => !r._isEstorno) ?? rows[0];
+      console.log("Fatura[0] sample:", { date: sample._dateKey, colaborador: sample._colaborador, valor: sample._valor, tipo: sample._tipo });
+    }
     const r = reconcile(rows, expenditures);
+    const s = computeStats(r);
+    console.log("Resultado:", { match: s.matched, divergent: s.divergent, onlyInvoice: s.onlyInvoice, onlyOnfly: s.onlyOnfly });
+    console.groupEnd();
     setResults(r);
-    setStats(computeStats(r));
+    setStats(s);
     setActiveView("conciliado");
     setTimeout(() => document.getElementById("results")?.scrollIntoView({ behavior: "smooth" }), 120);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -263,13 +289,22 @@ export default function App() {
     setStats(null);
     setIsParsing(true);
     try {
+      console.log(`%c[CSV] Parseando: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`, "color:#475569");
       const { rows, errors } = await parseInvoiceCsv(file);
-      console.log(`[CSV] ${rows.length} linhas parseadas, ${errors.length} erros`);
-      if (rows.length > 0) console.log("[CSV] Primeira linha:", rows[0]);
+      console.group(`%c[CSV] Parse concluído`, "color:#16A34A;font-weight:bold");
+      console.log(`Total linhas: ${rows.length} | Erros/ignoradas: ${errors.length}`);
+      if (errors.length > 0) console.warn("Erros de parse:", errors);
+      if (rows.length > 0) {
+        const sample = rows[0];
+        console.log("Primeira linha:", { date: sample._dateKey, colaborador: sample._colaborador, valor: sample._valor, tipo: sample._tipo, estorno: sample._isEstorno });
+        const datas = [...new Set(rows.map(r => r._dateKey))].sort();
+        console.log(`Datas no CSV: ${datas[0]} → ${datas[datas.length - 1]} (${datas.length} dias únicos)`);
+      }
+      console.groupEnd();
       setAllInvoiceRows(rows);
       setInvoiceErrors(errors);
     } catch (e) {
-      console.error("[CSV] Erro no parse:", e);
+      console.error("[CSV] ✖ Erro no parse:", e.message, e);
       setParseError(e.message);
     } finally {
       setIsParsing(false);

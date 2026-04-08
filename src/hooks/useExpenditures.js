@@ -59,7 +59,7 @@ export function useExpenditures() {
         { startDate: filters.startDate, endDate: filters.endDate },
         {
           onProgress: (loaded, total) => {
-            console.log(`[useExpenditures] Progresso: ${loaded}/${total}`);
+            console.log(`[useExpenditures] Progresso: ${loaded}/${total ?? "?"}`);
             if (!abortRef.current) {
               setProgress({ loaded, total });
             }
@@ -68,6 +68,7 @@ export function useExpenditures() {
       );
 
       if (!abortRef.current) {
+        console.log(`%c[useExpenditures] ✔ ${result.length} despesas carregadas`, "color:#16A34A;font-weight:bold");
         setData(result);
       }
     } catch (err) {
@@ -81,6 +82,11 @@ export function useExpenditures() {
         : err.status === 404 ? "notfound"
         : err.status === 0   ? "network"
         : "unknown";
+
+      console.error(
+        `%c[useExpenditures] ✖ Erro (${type})`, "color:#DC2626;font-weight:bold",
+        { message, status: err.status, body: err.body ?? null }
+      );
 
       setError(message);
       setErrorType(type);

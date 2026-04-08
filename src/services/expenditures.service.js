@@ -163,6 +163,10 @@ export async function fetchAllExpenditures(filters, { onProgress } = {}) {
   let   total   = Infinity;
   const all     = [];
 
+  console.group(`%c[expenditures] Buscando despesas`, "color:#1A56DB;font-weight:bold");
+  console.log("Filtros:", filters);
+  const t0 = performance.now();
+
   while (all.length < total) {
     const result = await fetchExpenditurePage({ ...filters, page, perPage });
 
@@ -177,6 +181,10 @@ export async function fetchAllExpenditures(filters, { onProgress } = {}) {
 
     page++;
   }
+
+  console.log(`✔ Total coletado: ${all.length} de ${total} | ${Math.round(performance.now() - t0)}ms`);
+  if (all.length > 0) console.log("Primeiro item:", all[0]);
+  console.groupEnd();
 
   return all;
 }
