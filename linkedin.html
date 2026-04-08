@@ -2,310 +2,177 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI','Inter',sans-serif;background:#F3F2EF;padding:32px 16px;color:#191919}
-.page{max-width:700px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
-h1{font-size:13px;font-weight:600;color:#666;text-align:center;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+body{font-family:'Inter',sans-serif;background:#F3F2EF;padding:40px 16px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:680px;margin:0 auto}
+.card{background:#fff;border-radius:12px;border:1px solid #e0dfdc;overflow:hidden}
 
-.card{background:#fff;border-radius:12px;border:1px solid #e0e0e0;overflow:hidden}
+.li-header{display:flex;align-items:center;gap:12px;padding:16px 18px 0}
+.avatar{width:48px;height:48px;border-radius:50%;background:#1A56DB;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px;flex-shrink:0}
+.li-name{font-size:14px;font-weight:700;color:#191919;letter-spacing:-.2px}
+.li-sub{font-size:12px;color:#666;margin-top:1px}
+.li-meta{font-size:12px;color:#999;margin-top:1px}
 
-/* LinkedIn post header */
-.li-header{display:flex;align-items:center;gap:10px;padding:14px 16px 0}
-.avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#1A56DB,#2563EB);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;flex-shrink:0}
-.li-name{font-size:14px;font-weight:600;color:#191919}
-.li-meta{font-size:12px;color:#666;margin-top:1px}
+.li-body{padding:16px 18px 0;font-size:15px;line-height:1.75;color:#191919;white-space:pre-line}
+.li-body strong{font-weight:700;color:#191919}
+.li-body .hl{color:#1A56DB;font-weight:700}
+.li-body .big{font-size:17px;font-weight:800;color:#0F172A;letter-spacing:-.3px;line-height:1.4;display:block;margin-bottom:4px}
 
-/* Post body */
-.li-body{padding:12px 16px 0;font-size:14px;line-height:1.65;color:#191919;white-space:pre-line}
-.li-body .highlight{color:#1A56DB;font-weight:600}
-.li-body .emoji{font-style:normal}
+.divider{height:1px;background:#f0efec;margin:16px 18px 0}
 
-/* Visual banner inside post */
-.banner{margin:12px 16px 0;border-radius:10px;overflow:hidden;position:relative}
-.b1{background:linear-gradient(135deg,#0F172A 0%,#1A56DB 100%);padding:28px 24px;min-height:160px;display:flex;flex-direction:column;justify-content:space-between}
-.b2{background:linear-gradient(135deg,#064E3B 0%,#16A34A 100%);padding:28px 24px;min-height:160px;display:flex;flex-direction:column;justify-content:space-between}
-.b3{background:linear-gradient(135deg,#1e1b4b 0%,#7C3AED 60%,#1A56DB 100%);padding:28px 24px;min-height:160px;display:flex;flex-direction:column;justify-content:space-between}
-.banner-tag{display:inline-block;background:rgba(255,255,255,.15);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;letter-spacing:.06em;margin-bottom:12px;border:1px solid rgba(255,255,255,.25)}
-.banner-title{font-size:22px;font-weight:800;color:#fff;line-height:1.2;letter-spacing:-.02em}
-.banner-sub{font-size:13px;color:rgba(255,255,255,.72);margin-top:6px}
-.banner-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:14px}
-.banner-pill{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:999px}
-.banner-logo{font-size:12px;font-weight:800;color:rgba(255,255,255,.6);letter-spacing:.04em}
+.banner{margin:16px 18px 0;border-radius:12px;overflow:hidden}
+.b-inner{background:#0C2D77;padding:32px 28px}
+.b-quote{font-size:22px;font-weight:900;color:#fff;line-height:1.2;letter-spacing:-.04em;margin-bottom:20px;max-width:480px}
+.b-quote em{font-style:normal;color:#60A5FA}
+.b-row{display:flex;align-items:stretch;gap:1px;background:rgba(255,255,255,.07);border-radius:10px;overflow:hidden;margin-bottom:20px}
+.b-col{flex:1;padding:16px 18px;background:#0C2D77}
+.b-col-label{font-size:10px;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+.b-col-val{font-size:20px;font-weight:900;color:#fff;letter-spacing:-.02em;line-height:1}
+.b-col-val sup{font-size:12px;color:#60A5FA;vertical-align:super;font-weight:700}
+.b-col-sub{font-size:11px;color:rgba(255,255,255,.4);margin-top:4px;line-height:1.4}
+.b-sep{width:1px;background:rgba(255,255,255,.07);flex-shrink:0}
+.b-tag-row{display:flex;align-items:center;justify-content:space-between}
+.b-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:rgba(255,255,255,.6);font-size:11px;font-weight:600;padding:5px 12px;border-radius:999px}
+.b-tag-dot{width:5px;height:5px;border-radius:50%;background:#60A5FA}
+.b-logo{font-size:13px;font-weight:800;color:rgba(255,255,255,.25);letter-spacing:.08em}
 
-/* stats row inside banner */
-.b-stats{display:flex;gap:20px;margin-top:12px}
-.b-stat .n{font-size:22px;font-weight:800;color:#fff}
-.b-stat .l{font-size:11px;color:rgba(255,255,255,.65);margin-top:1px}
+.li-tags{display:flex;flex-wrap:wrap;gap:4px;padding:14px 18px 0}
+.tag{font-size:13px;color:#0a66c2;cursor:pointer}
+.tag:hover{text-decoration:underline}
 
-/* status chips inside banner */
-.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
-.chip{font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px}
-
-/* Reactions bar */
-.li-reactions{padding:8px 16px;border-top:1px solid #e8e8e8;margin-top:12px;display:flex;align-items:center;justify-content:space-between}
-.react-icons{display:flex;gap:2px;align-items:center}
-.react-btn{background:none;border:none;color:#666;font-size:12px;padding:6px 10px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:5px;font-weight:600;transition:background .1s}
-.react-btn:hover{background:#f3f2ef}
-.copy-btn{background:#1A56DB;color:#fff;border:none;border-radius:6px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;transition:opacity .15s}
-.copy-btn:hover{opacity:.88}
+.li-actions{display:flex;align-items:center;justify-content:space-between;padding:12px 18px 14px;border-top:1px solid #e8e8e6;margin-top:14px}
+.act-btns{display:flex;gap:2px}
+.act-btn{background:none;border:none;color:#666;font-size:13px;font-weight:600;padding:8px 12px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:'Inter',sans-serif;transition:background .1s}
+.act-btn:hover{background:#f3f2ef;color:#191919}
+.copy-btn{background:#1A56DB;color:#fff;border:none;border-radius:7px;padding:8px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
+.copy-btn:hover{background:#1240AA}
 .copy-btn.done{background:#16A34A}
-
-.tags{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 14px;margin-top:4px}
-.tag{font-size:12px;color:#1A56DB;font-weight:500}
 </style>
 </head>
 <body>
-<div class="page">
-<h1>3 variações · LinkedIn · Tucano Hipersônico</h1>
-
-<!-- POST 1 -->
+<div class="wrap">
 <div class="card">
+
   <div class="li-header">
-    <div class="avatar">TH</div>
+    <div class="avatar">ML</div>
     <div>
-      <div class="li-name">Tucano Hipersônico 🦜</div>
-      <div class="li-meta">Hackathon Onfly 2026 · agora</div>
+      <div class="li-name">Marcelo Linhares</div>
+      <div class="li-sub">CEO & Founder · Onfly</div>
+      <div class="li-meta">agora · 🌐</div>
     </div>
   </div>
+
   <div class="li-body">
-🚀 <span class="highlight">Construímos um produto do zero em horas.</span> E ele já está rodando.
+<span class="big">Um time entrou no hackathon com uma pergunta simples.</span>
+<span class="big">"Por que isso ainda não é automático?"</span>
 
-No Hackathon Onfly 2026, o time Tucano Hipersônico criou o <span class="highlight">Onfly Conciliador</span> — uma ferramenta que cruza extratos financeiros automaticamente e aponta cada divergência em segundos.
+Todo mês, alguém no financeiro abre uma planilha e passa horas conferindo linha por linha se os lançamentos do cartão corporativo batem com o sistema.
 
-Sem servidor. Sem configuração. Só importa os CSVs e vai.
+Horas. Todo mês. Em toda empresa.
 
-✅ Confere
-⚠️ Valor diferente
-🔴 Só no extrato
-🔵 Só na 2ª fonte
+Não por falta de tecnologia.
+Por falta de alguém que parasse para perguntar: <strong>precisa mesmo ser assim?</strong>
 
-Isso é o que acontece quando um time com foco resolve um problema real com tecnologia simples e poderosa. 🔥
+O time Tucano Hipersônico parou. E em horas de hackathon construiu o <span class="hl">Onfly Conciliador</span>.
 
-👇 Código aberto no GitHub — vai lá dar uma estrela!</div>
-  <div class="banner b1" style="margin:12px 16px 0;border-radius:10px">
-    <div>
-      <div class="banner-tag">⚡ HACKATHON ONFLY 2026</div>
-      <div class="banner-title">Onfly Conciliador</div>
-      <div class="banner-sub">Conciliação de extratos em segundos — 100% no browser</div>
-      <div class="b-stats">
-        <div class="b-stat"><div class="n">&lt;2s</div><div class="l">para cruzar tudo</div></div>
-        <div class="b-stat"><div class="n">4</div><div class="l">status de divergência</div></div>
-        <div class="b-stat"><div class="n">0</div><div class="l">dados no servidor</div></div>
+O usuário sobe a fatura.
+O sistema busca os dados da Onfly via API, cruza tudo, normaliza, classifica cada divergência — e entrega o relatório pronto.
+
+<strong>Um passo. 10 segundos. Zero planilha.</strong>
+
+Isso me lembra por que acredito tanto em produto: a melhor solução não é a mais complexa. É a que faz a pergunta certa e remove o que não precisa existir.
+
+Inovação de verdade não é sobre tecnologia.
+É sobre coragem de questionar o que todo mundo já aceitou como normal.
+
+Parabéns ao time. 🦜</div>
+
+  <div class="divider"></div>
+
+  <div class="banner">
+    <div class="b-inner">
+      <div class="b-quote">De "horas de planilha"<br>para <em>1 passo automático.</em></div>
+      <div class="b-row">
+        <div class="b-col">
+          <div class="b-col-label">antes</div>
+          <div class="b-col-val">horas<sup>/mês</sup></div>
+          <div class="b-col-sub">conciliação manual,<br>linha por linha</div>
+        </div>
+        <div class="b-sep"></div>
+        <div class="b-col">
+          <div class="b-col-label">depois</div>
+          <div class="b-col-val">10<sup>seg</sup></div>
+          <div class="b-col-sub">API Onfly cruza tudo<br>automaticamente</div>
+        </div>
+        <div class="b-sep"></div>
+        <div class="b-col">
+          <div class="b-col-label">esforço</div>
+          <div class="b-col-val">1<sup>passo</sup></div>
+          <div class="b-col-sub">só subir a fatura.<br>o resto é automático.</div>
+        </div>
+      </div>
+      <div class="b-tag-row">
+        <div class="b-tag"><span class="b-tag-dot"></span>Hackathon Onfly 2026 · Tucano Hipersônico 🦜</div>
+        <span class="b-logo">ONFLY</span>
       </div>
     </div>
-    <div class="banner-bottom">
-      <div class="banner-pill">🦜 Tucano Hipersônico</div>
-      <div class="banner-logo">ONFLY</div>
-    </div>
   </div>
-  <div class="tags">
-    <span class="tag">#Hackathon</span>
-    <span class="tag">#Onfly</span>
-    <span class="tag">#React</span>
-    <span class="tag">#FinTech</span>
-    <span class="tag">#OpenSource</span>
-    <span class="tag">#Dev</span>
-  </div>
-  <div class="li-reactions">
-    <div style="display:flex;gap:4px">
-      <button class="react-btn">👍 Curtir</button>
-      <button class="react-btn">💬 Comentar</button>
-      <button class="react-btn">↗ Compartilhar</button>
-    </div>
-    <button class="copy-btn" onclick="copyPost(this,1)">Copiar texto</button>
-  </div>
-</div>
 
-<!-- POST 2 -->
-<div class="card">
-  <div class="li-header">
-    <div class="avatar" style="background:linear-gradient(135deg,#064E3B,#16A34A)">TH</div>
-    <div>
-      <div class="li-name">Tucano Hipersônico 🦜</div>
-      <div class="li-meta">Hackathon Onfly 2026 · agora</div>
-    </div>
-  </div>
-  <div class="li-body">
-Sabe aquela planilha de conciliação que o time financeiro passa horas preenchendo?
-
-<span class="highlight">A gente acabou com ela em um hackathon.</span> 😅
-
-Apresentamos o <span class="highlight">Onfly Conciliador</span> — built no Hackathon Onfly 2026 pelo time Tucano Hipersônico 🦜
-
-O fluxo é absurdamente simples:
-
-1️⃣ Sobe a fatura
-
-Pronto. 🎉
-
-O sistema busca automaticamente os dados da Onfly via API e faz a conciliação na hora — sem segunda fonte manual, sem configuração, sem esforço.
-
-O motor cruza tudo, classifica cada registro e mostra exatamente onde está a divergência — com o valor da diferença na cara dura.
-
-Tecnologia usada: <span class="highlight">React + Vite + PapaParse + Onfly API</span>. Leve, rápido, integrado.
-
-Orgulho demais desse projeto. 💚</div>
-  <div class="banner b2" style="margin:12px 16px 0;border-radius:10px">
-    <div>
-      <div class="banner-tag">✅ BUILT IN A HACKATHON</div>
-      <div class="banner-title">1 passo.<br>Conciliação resolvida.</div>
-      <div class="chips">
-        <div class="chip" style="background:rgba(255,255,255,.2);color:#fff">📁 Sobe a fatura</div>
-        <div class="chip" style="background:rgba(255,255,255,.2);color:#fff">⚡ API Onfly busca os dados</div>
-        <div class="chip" style="background:rgba(255,255,255,.2);color:#fff">✅ Conciliação automática</div>
-      </div>
-    </div>
-    <div class="banner-bottom">
-      <div class="banner-pill">React · Vite · PapaParse</div>
-      <div class="banner-logo">ONFLY</div>
-    </div>
-  </div>
-  <div class="tags">
-    <span class="tag">#Hackathon</span>
-    <span class="tag">#Onfly2026</span>
-    <span class="tag">#JavaScript</span>
+  <div class="li-tags">
     <span class="tag">#Produto</span>
     <span class="tag">#Inovação</span>
-  </div>
-  <div class="li-reactions">
-    <div style="display:flex;gap:4px">
-      <button class="react-btn">👍 Curtir</button>
-      <button class="react-btn">💬 Comentar</button>
-      <button class="react-btn">↗ Compartilhar</button>
-    </div>
-    <button class="copy-btn" onclick="copyPost(this,2)">Copiar texto</button>
-  </div>
-</div>
-
-<!-- POST 3 -->
-<div class="card">
-  <div class="li-header">
-    <div class="avatar" style="background:linear-gradient(135deg,#1e1b4b,#7C3AED)">TH</div>
-    <div>
-      <div class="li-name">Tucano Hipersônico 🦜</div>
-      <div class="li-meta">Hackathon Onfly 2026 · agora</div>
-    </div>
-  </div>
-  <div class="li-body">
-<span class="highlight">O que acontece quando você junta um time motivado, um problema real e um hackathon?</span>
-
-Isso: 👇
-
-Nasceu o <span class="highlight">Onfly Conciliador</span> — e o time Tucano Hipersônico entrou em modo turbo 🚀🦜
-
-Um problema que times financeiros enfrentam todo mês: reconciliar extratos de fontes diferentes, linha por linha, na mão.
-
-Nossa solução? Drag. Drop. Compare. Pronto.
-
-Nenhum dado sai do navegador. Nenhum servidor. Zero fricção.
-
-O resultado é um relatório completo com 4 categorias de status, exportável em CSV, gerado em menos de 2 segundos.
-
-<span class="highlight">Isso é o que hackathons são feitos pra isso.</span> Transformar dor real em produto real, com velocidade hipersônica. 🔥
-
-Repositório aberto — dá o play no README e testa hoje.</div>
-  <div class="banner b3" style="margin:12px 16px 0;border-radius:10px">
-    <div>
-      <div class="banner-tag">🏆 HACKATHON ONFLY 2026</div>
-      <div class="banner-title">Velocidade hipersônica.<br>Problema real resolvido.</div>
-      <div class="banner-sub">De ideia a produto rodando — em horas.</div>
-    </div>
-    <div class="banner-bottom">
-      <div style="display:flex;gap:8px">
-        <div class="banner-pill">🦜 Tucano Hipersônico</div>
-        <div class="banner-pill">github.com ↗</div>
-      </div>
-      <div class="banner-logo">ONFLY</div>
-    </div>
-  </div>
-  <div class="tags">
+    <span class="tag">#Liderança</span>
     <span class="tag">#Hackathon</span>
     <span class="tag">#Onfly</span>
     <span class="tag">#Startup</span>
-    <span class="tag">#Produto</span>
-    <span class="tag">#TechBR</span>
     <span class="tag">#BuildInPublic</span>
+    <span class="tag">#Gestão</span>
   </div>
-  <div class="li-reactions">
-    <div style="display:flex;gap:4px">
-      <button class="react-btn">👍 Curtir</button>
-      <button class="react-btn">💬 Comentar</button>
-      <button class="react-btn">↗ Compartilhar</button>
+
+  <div class="li-actions">
+    <div class="act-btns">
+      <button class="act-btn">👍 Curtir</button>
+      <button class="act-btn">💬 Comentar</button>
+      <button class="act-btn">↗ Compartilhar</button>
     </div>
-    <button class="copy-btn" onclick="copyPost(this,3)">Copiar texto</button>
+    <button class="copy-btn" id="copyBtn" onclick="copyText()">Copiar texto</button>
   </div>
-</div>
 
 </div>
-
+</div>
 <script>
-const posts = {
-  1: `🚀 Construímos um produto do zero em horas. E ele já está rodando.
+function copyText(){
+  const t=`Um time entrou no hackathon com uma pergunta simples.
+"Por que isso ainda não é automático?"
 
-No Hackathon Onfly 2026, o time Tucano Hipersônico criou o Onfly Conciliador — uma ferramenta que cruza extratos financeiros automaticamente e aponta cada divergência em segundos.
+Todo mês, alguém no financeiro abre uma planilha e passa horas conferindo linha por linha se os lançamentos do cartão corporativo batem com o sistema.
 
-Sem servidor. Sem configuração. Só importa os CSVs e vai.
+Horas. Todo mês. Em toda empresa.
 
-✅ Confere
-⚠️ Valor diferente
-🔴 Só no extrato
-🔵 Só na 2ª fonte
+Não por falta de tecnologia.
+Por falta de alguém que parasse para perguntar: precisa mesmo ser assim?
 
-Isso é o que acontece quando um time com foco resolve um problema real com tecnologia simples e poderosa. 🔥
+O time Tucano Hipersônico parou. E em horas de hackathon construiu o Onfly Conciliador.
 
-👇 Código aberto no GitHub — vai lá dar uma estrela!
+O usuário sobe a fatura.
+O sistema busca os dados da Onfly via API, cruza tudo, normaliza, classifica cada divergência — e entrega o relatório pronto.
 
-#Hackathon #Onfly #React #FinTech #OpenSource #Dev`,
+Um passo. Menos de 2 segundos. Zero planilha.
 
-  2: `Sabe aquela planilha de conciliação que o time financeiro passa horas preenchendo?
+Isso me lembra por que acredito tanto em produto: a melhor solução não é a mais complexa. É a que faz a pergunta certa e remove o que não precisa existir.
 
-A gente acabou com ela em um hackathon. 😅
+Inovação de verdade não é sobre tecnologia.
+É sobre coragem de questionar o que todo mundo já aceitou como normal.
 
-Apresentamos o Onfly Conciliador — built no Hackathon Onfly 2026 pelo time Tucano Hipersônico 🦜
+Parabéns ao time. 🦜
 
-O fluxo é absurdamente simples:
-
-1️⃣ Sobe a fatura
-
-Pronto. 🎉
-
-O sistema busca automaticamente os dados da Onfly via API e faz a conciliação na hora — sem segunda fonte manual, sem configuração, sem esforço.
-
-O motor cruza tudo, classifica cada registro e mostra exatamente onde está a divergência — com o valor da diferença na cara dura.
-
-Tecnologia usada: React + Vite + PapaParse + Onfly API. Leve, rápido, integrado.
-
-Orgulho demais desse projeto. 💚
-
-#Hackathon #Onfly2026 #JavaScript #Produto #Inovação`,
-
-  3: `O que acontece quando você junta um time motivado, um problema real e um hackathon?
-
-Isso: 👇
-
-Nasceu o Onfly Conciliador — e o time Tucano Hipersônico entrou em modo turbo 🚀🦜
-
-Um problema que times financeiros enfrentam todo mês: reconciliar extratos de fontes diferentes, linha por linha, na mão.
-
-Nossa solução? Drag. Drop. Compare. Pronto.
-
-Nenhum dado sai do navegador. Nenhum servidor. Zero fricção.
-
-O resultado é um relatório completo com 4 categorias de status, exportável em CSV, gerado em menos de 2 segundos.
-
-Isso é o que hackathons são feitos pra isso. Transformar dor real em produto real, com velocidade hipersônica. 🔥
-
-Repositório aberto — dá o play no README e testa hoje.
-
-#Hackathon #Onfly #Startup #Produto #TechBR #BuildInPublic`
-};
-
-function copyPost(btn, n) {
-  navigator.clipboard.writeText(posts[n]).then(() => {
-    btn.textContent = '✓ Copiado!';
-    btn.classList.add('done');
-    setTimeout(() => { btn.textContent = 'Copiar texto'; btn.classList.remove('done'); }, 2000);
+#Produto #Inovação #Liderança #Hackathon #Onfly #Startup #BuildInPublic #Gestão`;
+  navigator.clipboard.writeText(t).then(()=>{
+    const b=document.getElementById('copyBtn');
+    b.textContent='✓ Copiado!';b.classList.add('done');
+    setTimeout(()=>{b.textContent='Copiar texto';b.classList.remove('done');},2200);
   });
 }
 </script>
