@@ -93,18 +93,57 @@ function BigNumber({ value, label, color, bg, onClick, active }) {
   );
 }
 
-function SectionHeader({ color, dot, title, count, badge }) {
+
+// ── Pesquisa helpers ──────────────────────────────────────────────────────────
+function matchQ(q, ...fields) {
+  if (!q) return true;
+  const lq = q.toLowerCase();
+  return fields.some((f) => f && String(f).toLowerCase().includes(lq));
+}
+
+function SearchInput({ value, onChange, placeholder }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-      <div style={{ width: 10, height: 10, borderRadius: "50%", background: dot ?? color, flexShrink: 0 }} />
-      <span style={{ fontWeight: 700, fontSize: 14, color }}>{title}</span>
-      {count != null && (
-        <span style={{
-          background: color + "22", color, fontSize: 10, fontWeight: 700,
-          padding: "2px 8px", borderRadius: 999,
-        }}>{count} {count === 1 ? "item" : "itens"}</span>
-      )}
-      {badge}
+    <input
+      type="text" value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder ?? "Pesquisar…"}
+      style={{
+        width: "100%", boxSizing: "border-box",
+        border: `1.5px solid ${C.slate200}`, borderRadius: 8,
+        padding: "6px 12px", fontSize: 12, outline: "none",
+        background: C.slate50, color: C.slate800, marginBottom: 10,
+      }}
+    />
+  );
+}
+
+function CollapsibleSection({ title, color, border, count, badge, open, onToggle, children }) {
+  return (
+    <div style={{
+      background: C.white, borderRadius: 16,
+      border: `1px solid ${border}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+      overflow: "hidden",
+    }}>
+      <div
+        onClick={onToggle}
+        style={{
+          display: "flex", alignItems: "center", gap: 8,
+          padding: "14px 18px", cursor: "pointer",
+          background: open ? (color + "0d") : C.white,
+          transition: "background .15s",
+        }}
+      >
+        <div style={{ width: 10, height: 10, borderRadius: "50%", background: color, flexShrink: 0 }} />
+        <span style={{ fontWeight: 700, fontSize: 14, color, flex: 1 }}>{title}</span>
+        {count != null && (
+          <span style={{ background: color + "22", color, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999 }}>
+            {count} {count === 1 ? "item" : "itens"}
+          </span>
+        )}
+        {badge}
+        <span style={{ color, fontSize: 12, marginLeft: 4, fontWeight: 700 }}>{open ? "▲" : "▼"}</span>
+      </div>
+      {open && <div style={{ padding: "0 18px 16px" }}>{children}</div>}
     </div>
   );
 }
@@ -190,6 +229,15 @@ export default function App() {
   const [stats,     setStats]     = useState(null);
   const [diag,      setDiag]      = useState(null);
   const [activeView, setActiveView] = useState("conciliado"); // "conciliado" | "somente_fatura"
+
+  // ── Dropdowns colapsáveis ──────────────────────────────────────────────────
+  const [showInvoice, setShowInvoice] = useState(false);
+  const [showOnfly,   setShowOnfly]   = useState(false);
+
+  // ── Filtros de pesquisa ────────────────────────────────────────────────────
+  const [qConciliado, setQConciliado] = useState("");
+  const [qFatura,     setQFatura]     = useState("");
+  const [qOnfly,      setQOnfly]      = useState("");
 
   // Fatura filtrada pelo range escolhido
   const invoiceRows = allInvoiceRows
@@ -335,25 +383,6 @@ export default function App() {
     fetchExp({ startDate: dateStart, endDate: dateEnd });
   }, [allInvoiceRows, dateStart, dateEnd, fetchExp]);
 
-  // ── Dados para tabelas ─────────────────────────────────────────────────────
-  const invoiceTableRows = (invoiceRows ?? []).slice(0, 300).map((r) => [
-    r._isEstorno
-      ? <span style={{ background: C.redLight, color: C.red, fontWeight: 700, fontSize: 10, padding: "2px 6px", borderRadius: 4 }}>↩ Estorno</span>
-      : <span style={{ background: C.blueLight, color: C.blue, fontWeight: 700, fontSize: 10, padding: "2px 6px", borderRadius: 4 }}>{r._tipo}</span>,
-    r._dateKey,
-    r._desc,
-    r._colaborador + (r._finalCartao ? ` ****${r._finalCartao}` : ""),
-    fmtBRL(r._valor),
-  ]);
-
-  const onFlyTableRows = expenditures.slice(0, 300).map((e) => [
-    e.occurrence_date ?? e.date ?? "—",
-    e.description ?? "—",
-    e.expenditureType?.name ?? "—",
-    e.user?.name ?? "—",
-    fmtBRL(e.amount ?? e.value ?? e.total ?? null),
-  ]);
-
   const conciliados    = results?.filter((r) => r.status === "match")        ?? [];
   const divergentes    = results?.filter((r) => r.status === "divergent")    ?? [];
   const soExtrato      = results?.filter((r) => r.status === "only_invoice") ?? [];
@@ -497,7 +526,7 @@ export default function App() {
               onDragLeave={() => setIsDragging(false)}
               onClick={() => fileRef.current?.click()}
               style={{
-                border: `2px dashed ${isDragging ? C.blue : C.slate300}`,
+                border: `2px dashed ${isDragging ? C.blue : C.slate200}`,
                 borderRadius: 14, padding: "clamp(28px,4vw,44px) 20px",
                 textAlign: "center", cursor: "pointer",
                 background: isDragging ? C.blueLight : C.slate50,
@@ -565,7 +594,7 @@ export default function App() {
             <ProgressBar loaded={progress?.loaded ?? 0} total={progress?.total ?? null} />
             <div style={{ display: "flex", justifyContent: "center", marginTop: 14 }}>
               <button onClick={cancel} style={{
-                background: "none", border: `1px solid ${C.slate300}`, borderRadius: 8,
+                background: "none", border: `1px solid ${C.slate200}`, borderRadius: 8,
                 padding: "6px 18px", fontSize: 12, color: C.slate500, cursor: "pointer",
               }}>
                 Cancelar
@@ -695,166 +724,184 @@ export default function App() {
               </div>
             )}
 
-            {/* ── DADOS BRUTOS: Fatura + Onfly ── */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            {/* ── Fatura — dropdown colapsável ── */}
+            <CollapsibleSection
+              title="Fatura — extrato do cartão"
+              color={C.blue} border={C.blueMid}
+              count={invoiceRows?.length}
+              badge={<span style={{ fontSize: 10, color: C.slate400, marginLeft: 4 }}>{dateStart} → {dateEnd}</span>}
+              open={showInvoice} onToggle={() => setShowInvoice((v) => !v)}
+            >
+              <SearchInput value={qFatura} onChange={setQFatura} placeholder="Pesquisar por nome, descrição, data…" />
+              <DataTable
+                headers={["Tipo", "Data", "Descrição", "Colaborador / Cartão", "Valor"]}
+                rows={(invoiceRows ?? []).filter((r) =>
+                  matchQ(qFatura, r._colaborador, r._desc, r._dateKey, String(r._valor))
+                ).slice(0, 500).map((r) => [
+                  r._isEstorno
+                    ? <span style={{ background: C.redLight, color: C.red, fontWeight: 700, fontSize: 10, padding: "2px 6px", borderRadius: 4 }}>↩ Estorno</span>
+                    : <span style={{ background: C.blueLight, color: C.blue, fontWeight: 700, fontSize: 10, padding: "2px 6px", borderRadius: 4 }}>{r._tipo}</span>,
+                  r._dateKey, r._desc,
+                  r._colaborador + (r._finalCartao ? ` ****${r._finalCartao}` : ""),
+                  fmtBRL(r._valor),
+                ])}
+                headerBg={C.blue} emptyMsg="Nenhuma transação encontrada"
+              />
+            </CollapsibleSection>
 
-              {/* Fatura filtrada */}
-              <div style={{
-                background: C.white, borderRadius: 16, padding: 18,
-                border: `1px solid ${C.blueMid}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-              }}>
-                <SectionHeader
-                  color={C.blue}
-                  title="Fatura — extrato do cartão"
-                  count={invoiceRows?.length}
-                  badge={
-                    <span style={{ fontSize: 10, color: C.slate400, marginLeft: 4 }}>
-                      {dateStart} → {dateEnd}
+            {/* ── Onfly — dropdown colapsável ── */}
+            <CollapsibleSection
+              title="Onfly — despesas via API"
+              color={C.green} border={C.greenMid}
+              count={expenditures.length}
+              open={showOnfly} onToggle={() => setShowOnfly((v) => !v)}
+            >
+              <SearchInput value={qOnfly} onChange={setQOnfly} placeholder="Pesquisar por nome, descrição, data…" />
+              <DataTable
+                headers={["Data", "Descrição", "Tipo", "Colaborador", "Valor"]}
+                rows={expenditures.filter((e) =>
+                  matchQ(qOnfly, e.user?.name, e.description, e.occurrence_date ?? e.date, e.expenditureType?.name)
+                ).slice(0, 500).map((e) => [
+                  e.occurrence_date ?? e.date ?? "—",
+                  e.description ?? "—",
+                  e.expenditureType?.name ?? "—",
+                  e.user?.name ?? "—",
+                  fmtBRL(e.amount ?? e.value ?? e.total ?? null),
+                ])}
+                headerBg={C.green} emptyMsg="Nenhuma despesa encontrada"
+              />
+            </CollapsibleSection>
+
+            {/* ── Conciliado: sempre visível, com pesquisa ── */}
+            {activeView === "conciliado" && (() => {
+              const allRows = conciliados.concat(divergentes);
+              const filtered = allRows.filter((r) =>
+                matchQ(qConciliado,
+                  r.invoice?._colaborador, r.invoice?._desc, r.invoice?._dateKey,
+                  r.expenditure?.description, r.expenditure?.user?.name,
+                  String(r.invoice?._valor ?? ""), String(r.expenditure?.amount ?? "")
+                )
+              );
+              return (
+                <div style={{
+                  background: C.white, borderRadius: 16, padding: "clamp(14px,2.5vw,22px)",
+                  border: `1px solid ${C.greenMid}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: "50%", background: C.green }} />
+                    <span style={{ fontWeight: 700, fontSize: 14, color: C.green, flex: 1 }}>Conciliado</span>
+                    <span style={{ background: C.greenLight, color: C.green, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999 }}>
+                      {filtered.length} {filtered.length !== allRows.length ? `/ ${allRows.length}` : ""} itens
                     </span>
-                  }
-                />
-                <DataTable
-                  headers={["Tipo", "Data", "Descrição", "Colaborador / Cartão", "Valor"]}
-                  rows={invoiceTableRows}
-                  headerBg={C.blue}
-                  emptyMsg="Nenhuma transação no período"
-                />
-                {(invoiceRows?.length ?? 0) > 300 && (
-                  <p style={{ fontSize: 10, color: C.slate400, marginTop: 6, textAlign: "right" }}>
-                    Exibindo 300 de {invoiceRows.length}
-                  </p>
-                )}
-              </div>
-
-              {/* Onfly API */}
-              <div style={{
-                background: C.white, borderRadius: 16, padding: 18,
-                border: `1px solid ${C.greenMid}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-              }}>
-                <SectionHeader
-                  color={C.green}
-                  title="Onfly — despesas via API"
-                  count={expenditures.length}
-                />
-                <DataTable
-                  headers={["Data", "Descrição", "Tipo", "Colaborador", "Valor"]}
-                  rows={onFlyTableRows}
-                  headerBg={C.green}
-                  emptyMsg="Nenhuma despesa encontrada"
-                />
-                {expenditures.length > 300 && (
-                  <p style={{ fontSize: 10, color: C.slate400, marginTop: 6, textAlign: "right" }}>
-                    Exibindo 300 de {expenditures.length}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* ── Conciliado: fatura × Onfly ── */}
-            {[
-              { key: "conciliado", show: activeView === "conciliado", rows: conciliados.concat(divergentes), color: C.green, border: C.greenMid, title: "Conciliado" },
-            ].map(({ key, show, rows, color, border, title }) => show && (
-              <div key={key} style={{
-                background: C.white, borderRadius: 16, padding: "clamp(14px,2.5vw,22px)",
-                border: `1px solid ${border}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-              }}>
-                <SectionHeader color={color} title={title} count={rows.length} />
-                <div style={{ overflowX: "auto", borderRadius: 10, border: `1px solid ${C.slate200}`, fontSize: 11 }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                    <thead>
-                      <tr>
-                        {["Tipo","Data","Descrição Fatura","Colaborador","Cartão","Valor Fatura","Tipo Onfly","Descrição Onfly","Valor Onfly","Δ"].map((h, i) => (
-                          <th key={i} style={{ padding: "7px 10px", background: color, color: C.white, fontWeight: 600, whiteSpace: "nowrap", textAlign: i >= 5 ? "right" : "left" }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows.length === 0 ? (
-                        <tr><td colSpan={10} style={{ padding: 24, textAlign: "center", color: C.slate400 }}>Nenhum item.</td></tr>
-                      ) : rows.map((r, i) => {
-                        const expAmt = r.expenditure?.amount ?? r.expenditure?.value ?? r.expenditure?.total;
-                        return (
-                          <tr key={i} style={{ background: i % 2 === 0 ? C.white : C.slate50, borderTop: `1px solid ${C.slate200}` }}>
-                            <td style={{ padding: "5px 10px" }}>
-                              <span style={{ background: color + "22", color, fontWeight: 700, fontSize: 10, padding: "2px 6px", borderRadius: 4 }}>
-                                {r.invoice?._tipo ?? "Compra"}
-                              </span>
-                            </td>
-                            <td style={{ padding: "5px 10px", color: C.slate600, whiteSpace: "nowrap" }}>{r.invoice?._dateKey ?? "—"}</td>
-                            <td style={{ padding: "5px 10px", color: C.slate700, maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={r.invoice?._desc}>{r.invoice?._desc ?? "—"}</td>
-                            <td style={{ padding: "5px 10px", color: C.slate600, whiteSpace: "nowrap" }}>{r.invoice?._colaborador ?? "—"}</td>
-                            <td style={{ padding: "5px 10px", color: C.slate500, whiteSpace: "nowrap" }}>{r.invoice?._finalCartao ? `****${r.invoice._finalCartao}` : "—"}</td>
-                            <td style={{ padding: "5px 10px", color: C.blue, fontWeight: 600, textAlign: "right", whiteSpace: "nowrap" }}>{fmtBRL(r.invoice?._valor)}</td>
-                            <td style={{ padding: "5px 10px", color: C.slate500, whiteSpace: "nowrap" }}>{r.expenditure?.expenditureType?.name ?? "—"}</td>
-                            <td style={{ padding: "5px 10px", color: C.slate700, maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={r.expenditure?.description}>{r.expenditure?.description ?? "—"}</td>
-                            <td style={{ padding: "5px 10px", color: C.green, fontWeight: 600, textAlign: "right", whiteSpace: "nowrap" }}>{fmtBRL(expAmt)}</td>
-                            <td style={{ padding: "5px 10px", fontWeight: 700, textAlign: "right", whiteSpace: "nowrap",
-                              color: r.diff == null ? C.slate400 : Math.abs(r.diff) < 0.02 ? C.green : C.red }}>
-                              {r.diff != null ? `${r.diff >= 0 ? "+" : "−"}${fmtBRL(Math.abs(r.diff))}` : "—"}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  </div>
+                  <SearchInput value={qConciliado} onChange={setQConciliado} placeholder="Pesquisar por colaborador, descrição, data, valor…" />
+                  <div style={{ overflowX: "auto", borderRadius: 10, border: `1px solid ${C.slate200}`, fontSize: 11 }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <thead>
+                        <tr>
+                          {["Tipo","Data","Descrição Fatura","Colaborador","Cartão","Valor Fatura","Tipo Onfly","Descrição Onfly","Valor Onfly","Diferença"].map((h, i) => (
+                            <th key={i} style={{ padding: "7px 10px", background: C.green, color: C.white, fontWeight: 600, whiteSpace: "nowrap", textAlign: i >= 5 ? "right" : "left" }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filtered.length === 0 ? (
+                          <tr><td colSpan={10} style={{ padding: 24, textAlign: "center", color: C.slate400 }}>Nenhum item encontrado.</td></tr>
+                        ) : filtered.map((r, i) => {
+                          const expAmt  = r.expenditure?.amount ?? r.expenditure?.value ?? r.expenditure?.total;
+                          const absDiff = r.diff != null ? Math.abs(r.diff) : null;
+                          const exact   = absDiff != null && absDiff < 0.02;
+                          const diffBg    = absDiff == null ? C.slate100 : exact ? C.greenLight : absDiff < 1 ? C.amberLight : C.redLight;
+                          const diffColor = absDiff == null ? C.slate400  : exact ? C.green     : absDiff < 1 ? C.amber      : C.red;
+                          const diffLabel = absDiff == null ? "—" : exact ? "✓ Exato" : `${r.diff > 0 ? "+" : "−"} ${fmtBRL(absDiff)}`;
+                          return (
+                            <tr key={i} style={{ background: i % 2 === 0 ? C.white : C.slate50, borderTop: `1px solid ${C.slate200}` }}>
+                              <td style={{ padding: "5px 10px" }}>
+                                <span style={{ background: C.greenLight, color: C.green, fontWeight: 700, fontSize: 10, padding: "2px 6px", borderRadius: 4 }}>
+                                  {r.invoice?._tipo ?? "Compra"}
+                                </span>
+                              </td>
+                              <td style={{ padding: "5px 10px", color: C.slate600, whiteSpace: "nowrap" }}>{r.invoice?._dateKey ?? "—"}</td>
+                              <td style={{ padding: "5px 10px", color: C.slate700, maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={r.invoice?._desc}>{r.invoice?._desc ?? "—"}</td>
+                              <td style={{ padding: "5px 10px", color: C.slate600, whiteSpace: "nowrap" }}>{r.invoice?._colaborador ?? "—"}</td>
+                              <td style={{ padding: "5px 10px", color: C.slate500, whiteSpace: "nowrap" }}>{r.invoice?._finalCartao ? `****${r.invoice._finalCartao}` : "—"}</td>
+                              <td style={{ padding: "5px 10px", color: C.blue, fontWeight: 600, textAlign: "right", whiteSpace: "nowrap" }}>{fmtBRL(r.invoice?._valor)}</td>
+                              <td style={{ padding: "5px 10px", color: C.slate500, whiteSpace: "nowrap" }}>{r.expenditure?.expenditureType?.name ?? "—"}</td>
+                              <td style={{ padding: "5px 10px", color: C.slate700, maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={r.expenditure?.description}>{r.expenditure?.description ?? "—"}</td>
+                              <td style={{ padding: "5px 10px", color: C.green, fontWeight: 600, textAlign: "right", whiteSpace: "nowrap" }}>{fmtBRL(expAmt)}</td>
+                              <td style={{ padding: "5px 10px", textAlign: "center", whiteSpace: "nowrap" }}>
+                                <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: 999, background: diffBg, color: diffColor, fontWeight: 700, fontSize: 10 }}>
+                                  {diffLabel}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })()}
 
-            {/* ── Só extrato (só na fatura do cartão) ── */}
-            {activeView === "somente_fatura" && (
-              <div style={{
-                background: C.white, borderRadius: 16, padding: "clamp(14px,2.5vw,22px)",
-                border: `1px solid ${C.redMid}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-              }}>
-                <SectionHeader
-                  color={C.red}
-                  title="Somente na fatura — na fatura, não encontrado no Onfly"
-                  count={soExtrato.length}
-                  badge={estornos.length > 0 && (
+            {/* ── Somente na fatura — com pesquisa ── */}
+            {activeView === "somente_fatura" && (() => {
+              const filtered = soExtrato.filter((r) =>
+                matchQ(qFatura, r.invoice?._colaborador, r.invoice?._desc, r.invoice?._dateKey, String(r.invoice?._valor ?? ""))
+              );
+              return (
+                <div style={{
+                  background: C.white, borderRadius: 16, padding: "clamp(14px,2.5vw,22px)",
+                  border: `1px solid ${C.redMid}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: "50%", background: C.red }} />
+                    <span style={{ fontWeight: 700, fontSize: 14, color: C.red, flex: 1 }}>Somente na fatura</span>
                     <span style={{ background: C.redLight, color: C.red, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999 }}>
-                      {estornos.length} estornos
+                      {filtered.length} {filtered.length !== soExtrato.length ? `/ ${soExtrato.length}` : ""} itens
                     </span>
-                  )}
-                />
-                <div style={{ overflowX: "auto", borderRadius: 10, border: `1px solid ${C.slate200}`, fontSize: 11 }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                    <thead>
-                      <tr>
-                        {["Tipo","Data","Descrição","Colaborador","Cartão","Valor"].map((h, i) => (
-                          <th key={i} style={{ padding: "7px 10px", background: C.red, color: C.white, fontWeight: 600, whiteSpace: "nowrap", textAlign: i === 5 ? "right" : "left" }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {soExtrato.length === 0 ? (
-                        <tr><td colSpan={6} style={{ padding: 24, textAlign: "center", color: C.slate400 }}>Nenhum item.</td></tr>
-                      ) : soExtrato.map((r, i) => {
-                        const isEstorno = r.invoice?._isEstorno;
-                        return (
-                          <tr key={i} style={{ background: i % 2 === 0 ? C.white : C.slate50, borderTop: `1px solid ${C.slate200}` }}>
-                            <td style={{ padding: "5px 10px" }}>
-                              <span style={{
-                                fontWeight: 700, fontSize: 10, padding: "2px 6px", borderRadius: 4,
-                                background: isEstorno ? C.redLight : "#fff3f3",
-                                color: C.red,
-                              }}>
-                                {isEstorno ? "↩ Estorno" : (r.invoice?._tipo ?? "Compra")}
-                              </span>
-                            </td>
-                            <td style={{ padding: "5px 10px", color: C.slate600, whiteSpace: "nowrap" }}>{r.invoice?._dateKey ?? "—"}</td>
-                            <td style={{ padding: "5px 10px", color: C.slate700, maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={r.invoice?._desc}>{r.invoice?._desc ?? "—"}</td>
-                            <td style={{ padding: "5px 10px", color: C.slate600, whiteSpace: "nowrap" }}>{r.invoice?._colaborador ?? "—"}</td>
-                            <td style={{ padding: "5px 10px", color: C.slate500, whiteSpace: "nowrap" }}>{r.invoice?._finalCartao ? `****${r.invoice._finalCartao}` : "—"}</td>
-                            <td style={{ padding: "5px 10px", color: C.red, fontWeight: 600, textAlign: "right", whiteSpace: "nowrap" }}>{fmtBRL(r.invoice?._valor)}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                    {estornos.length > 0 && (
+                      <span style={{ background: C.redLight, color: C.red, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999 }}>
+                        ↩ {estornos.length} estornos
+                      </span>
+                    )}
+                  </div>
+                  <SearchInput value={qFatura} onChange={setQFatura} placeholder="Pesquisar por colaborador, descrição, data…" />
+                  <div style={{ overflowX: "auto", borderRadius: 10, border: `1px solid ${C.slate200}`, fontSize: 11 }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <thead>
+                        <tr>
+                          {["Tipo","Data","Descrição","Colaborador","Cartão","Valor"].map((h, i) => (
+                            <th key={i} style={{ padding: "7px 10px", background: C.red, color: C.white, fontWeight: 600, whiteSpace: "nowrap", textAlign: i === 5 ? "right" : "left" }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filtered.length === 0 ? (
+                          <tr><td colSpan={6} style={{ padding: 24, textAlign: "center", color: C.slate400 }}>Nenhum item encontrado.</td></tr>
+                        ) : filtered.map((r, i) => {
+                          const isEst = r.invoice?._isEstorno;
+                          return (
+                            <tr key={i} style={{ background: i % 2 === 0 ? C.white : C.slate50, borderTop: `1px solid ${C.slate200}` }}>
+                              <td style={{ padding: "5px 10px" }}>
+                                <span style={{ fontWeight: 700, fontSize: 10, padding: "2px 6px", borderRadius: 4, background: isEst ? C.redLight : "#fff3f3", color: C.red }}>
+                                  {isEst ? "↩ Estorno" : (r.invoice?._tipo ?? "Compra")}
+                                </span>
+                              </td>
+                              <td style={{ padding: "5px 10px", color: C.slate600, whiteSpace: "nowrap" }}>{r.invoice?._dateKey ?? "—"}</td>
+                              <td style={{ padding: "5px 10px", color: C.slate700, maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={r.invoice?._desc}>{r.invoice?._desc ?? "—"}</td>
+                              <td style={{ padding: "5px 10px", color: C.slate600, whiteSpace: "nowrap" }}>{r.invoice?._colaborador ?? "—"}</td>
+                              <td style={{ padding: "5px 10px", color: C.slate500, whiteSpace: "nowrap" }}>{r.invoice?._finalCartao ? `****${r.invoice._finalCartao}` : "—"}</td>
+                              <td style={{ padding: "5px 10px", color: C.red, fontWeight: 600, textAlign: "right", whiteSpace: "nowrap" }}>{fmtBRL(r.invoice?._valor)}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
 
           </div>
