@@ -3,375 +3,499 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Onfly Conciliador – Tucano Hipersônico</title>
+<title>Onfly Conciliador</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
 <style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  :root{
-    --blue:#1A56DB;--blue-dark:#1240AA;--blue-light:#EFF6FF;--blue-mid:#BFDBFE;
-    --green:#16A34A;--green-light:#F0FDF4;--green-mid:#BBF7D0;
-    --yellow:#D97706;--yellow-light:#FFFBEB;
-    --red:#DC2626;--red-light:#FEF2F2;
-    --slate50:#F8FAFC;--slate100:#F1F5F9;--slate200:#E2E8F0;
-    --slate400:#94A3B8;--slate500:#64748B;--slate700:#334155;--slate900:#0F172A;
-    --white:#fff;
-  }
-  html{scroll-behavior:smooth}
-  body{font-family:'Inter','Segoe UI',sans-serif;color:var(--slate900);background:var(--white);overflow-x:hidden}
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --blue:#1A56DB;--blue-d:#1240AA;--blue-dd:#0C2D77;
+  --blue-l:#EFF6FF;--blue-m:#BFDBFE;--blue-mm:#93C5FD;
+  --green:#16A34A;--green-l:#F0FDF4;--green-m:#BBF7D0;
+  --red:#DC2626;--red-l:#FEF2F2;
+  --yellow:#D97706;--yellow-l:#FFFBEB;
+  --s50:#F8FAFC;--s100:#F1F5F9;--s200:#E2E8F0;--s300:#CBD5E1;
+  --s400:#94A3B8;--s500:#64748B;--s600:#475569;--s700:#334155;
+  --s800:#1E293B;--s900:#0F172A;--white:#fff;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;color:var(--s900);background:var(--white);overflow-x:hidden;-webkit-font-smoothing:antialiased}
 
-  /* NAV */
-  nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(255,255,255,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--slate200);padding:0 5vw;height:60px;display:flex;align-items:center;justify-content:space-between}
-  .logo{display:flex;align-items:center;gap:10px}
-  .logo-icon{width:34px;height:34px;background:var(--blue);border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px}
-  .logo-text{font-weight:700;font-size:16px;color:var(--slate900)}
-  .logo-text span{color:var(--blue)}
-  .nav-badge{background:var(--blue-light);color:var(--blue);font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;letter-spacing:.04em}
-  .nav-cta{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;transition:background .15s}
-  .nav-cta:hover{background:var(--blue-dark)}
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(255,255,255,0.95);backdrop-filter:blur(16px);border-bottom:1px solid var(--s200);padding:0 6vw;height:64px;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-mark{width:36px;height:36px;background:var(--blue);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:16px;letter-spacing:-.5px}
+.logo-name{font-weight:800;font-size:16px;color:var(--s900);letter-spacing:-.3px}
+.logo-name em{font-style:normal;color:var(--blue)}
+.nav-right{display:flex;align-items:center;gap:16px}
+.nav-pill{background:var(--blue-l);color:var(--blue-dd);border:1px solid var(--blue-m);font-size:11px;font-weight:700;padding:4px 12px;border-radius:999px;letter-spacing:.05em}
+.nav-link{font-size:13px;color:var(--s600);font-weight:500;text-decoration:none;transition:color .15s}
+.nav-link:hover{color:var(--blue)}
+.nav-btn{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;letter-spacing:-.1px;transition:background .15s}
+.nav-btn:hover{background:var(--blue-d)}
 
-  /* HERO */
-  .hero{padding:120px 5vw 80px;text-align:center;background:linear-gradient(180deg,var(--blue-light) 0%,var(--white) 100%)}
-  .hero-tag{display:inline-flex;align-items:center;gap:6px;background:var(--blue-light);color:var(--blue);font-size:12px;font-weight:700;padding:5px 14px;border-radius:999px;margin-bottom:24px;border:1px solid var(--blue-mid)}
-  .hero-tag .dot{width:7px;height:7px;border-radius:50%;background:var(--blue);animation:pulse 2s infinite}
-  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
-  h1{font-size:clamp(32px,5vw,58px);font-weight:800;line-height:1.1;letter-spacing:-.02em;color:var(--slate900);margin-bottom:18px}
-  h1 .accent{color:var(--blue)}
-  .hero-sub{font-size:clamp(15px,2vw,19px);color:var(--slate500);max-width:600px;margin:0 auto 36px;line-height:1.6}
-  .hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-  .btn-primary{background:var(--blue);color:#fff;border:none;border-radius:10px;padding:13px 28px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;transition:background .15s,transform .1s}
-  .btn-primary:hover{background:var(--blue-dark);transform:translateY(-1px)}
-  .btn-secondary{background:var(--white);color:var(--slate700);border:1.5px solid var(--slate200);border-radius:10px;padding:13px 28px;font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;transition:border-color .15s}
-  .btn-secondary:hover{border-color:var(--blue);color:var(--blue)}
+/* ── HERO ── */
+.hero{padding:140px 6vw 100px;background:var(--white);position:relative;overflow:hidden}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% -10%,#EFF6FF 0%,transparent 70%);pointer-events:none}
+.hero-inner{max-width:1160px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;position:relative}
+.hero-kicker{display:inline-flex;align-items:center;gap:8px;background:var(--blue-l);border:1px solid var(--blue-m);color:var(--blue-dd);font-size:12px;font-weight:700;padding:6px 14px;border-radius:999px;margin-bottom:28px;letter-spacing:.04em}
+.kicker-dot{width:7px;height:7px;border-radius:50%;background:var(--blue);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+.hero h1{font-size:clamp(36px,4.5vw,58px);font-weight:900;line-height:1.05;letter-spacing:-.04em;color:var(--s900);margin-bottom:22px}
+.hero h1 .line-blue{color:var(--blue)}
+.hero h1 .line-muted{color:var(--s400)}
+.hero-desc{font-size:17px;color:var(--s500);line-height:1.7;margin-bottom:36px;max-width:460px}
+.hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:40px}
+.btn-primary{background:var(--blue);color:#fff;border:none;border-radius:10px;padding:14px 28px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;letter-spacing:-.1px;transition:all .15s;display:inline-flex;align-items:center;gap:8px}
+.btn-primary:hover{background:var(--blue-d);transform:translateY(-1px)}
+.btn-ghost{background:var(--white);color:var(--s700);border:1.5px solid var(--s200);border-radius:10px;padding:14px 28px;font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;transition:all .15s}
+.btn-ghost:hover{border-color:var(--blue);color:var(--blue)}
+.hero-trust{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.trust-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--s500);font-weight:500}
+.trust-icon{width:16px;height:16px;border-radius:50%;background:var(--green-l);border:1.5px solid var(--green-m);display:flex;align-items:center;justify-content:center;font-size:9px}
 
-  /* MOCKUP STRIP */
-  .mockup-strip{padding:0 5vw 80px;max-width:1100px;margin:0 auto}
-  .mockup{background:var(--white);border:1.5px solid var(--slate200);border-radius:16px;overflow:hidden;box-shadow:0 8px 48px rgba(0,0,0,.09)}
-  .mockup-bar{background:var(--slate100);padding:10px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--slate200)}
-  .dot-r{width:11px;height:11px;border-radius:50%;background:#FC5753}
-  .dot-y{width:11px;height:11px;border-radius:50%;background:#FDBC40}
-  .dot-g{width:11px;height:11px;border-radius:50%;background:#34C749}
-  .mockup-bar span{flex:1;text-align:center;font-size:12px;color:var(--slate400)}
-  .mockup-body{padding:28px 28px 20px;background:linear-gradient(135deg,var(--blue-light) 0%,var(--slate50) 100%)}
-  .m-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
-  .m-title{font-size:18px;font-weight:800;color:var(--slate900)}
-  .m-subtitle{font-size:13px;color:var(--slate500);margin-top:2px}
-  .m-panels{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
-  .m-panel{background:var(--white);border-radius:12px;padding:14px;border:1px solid var(--slate200)}
-  .m-panel-badge{display:flex;align-items:center;gap:6px;margin-bottom:10px}
-  .m-num{width:18px;height:18px;border-radius:5px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:800}
-  .m-col-header{font-size:12px;font-weight:700}
-  .m-table{width:100%;border-collapse:collapse;font-size:11px}
-  .m-table th{padding:5px 8px;background:var(--blue);color:#fff;text-align:left;font-weight:600}
-  .m-table tr:nth-child(odd) td{background:var(--slate50)}
-  .m-table td{padding:5px 8px;color:var(--slate700);border-top:1px solid var(--slate200)}
-  .m-result{background:var(--white);border-radius:12px;padding:14px;border:1px solid var(--slate200)}
-  .m-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0}
-  .m-stat{border-radius:8px;padding:8px;text-align:center}
-  .m-stat-n{font-size:18px;font-weight:800}
-  .m-stat-l{font-size:10px;font-weight:600}
-  .status-row{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:6px;margin-bottom:4px;font-size:11px;font-weight:600}
+/* ── HERO VISUAL ── */
+.hero-visual{position:relative}
+.screen{background:var(--white);border:1px solid var(--s200);border-radius:16px;overflow:hidden;box-shadow:0 24px 80px rgba(15,23,42,.12),0 4px 20px rgba(15,23,42,.06)}
+.screen-bar{background:var(--s50);border-bottom:1px solid var(--s200);padding:10px 16px;display:flex;align-items:center;gap:8px}
+.sb-dot{width:10px;height:10px;border-radius:50%}
+.screen-bar span{flex:1;text-align:center;font-size:11px;color:var(--s400);font-weight:500}
+.screen-body{padding:20px}
+.sb-label{font-size:11px;font-weight:700;color:var(--s400);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px}
+.upload-zone{border:2px dashed var(--blue-m);background:var(--blue-l);border-radius:10px;padding:20px;text-align:center;margin-bottom:16px}
+.upload-icon{font-size:24px;margin-bottom:6px}
+.upload-text{font-size:13px;font-weight:700;color:var(--blue-dd);margin-bottom:2px}
+.upload-sub{font-size:11px;color:var(--blue)}
+.api-row{display:flex;align-items:center;gap:10px;background:var(--green-l);border:1px solid var(--green-m);border-radius:10px;padding:12px 14px;margin-bottom:16px}
+.api-badge{background:var(--green);color:#fff;font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;letter-spacing:.05em;flex-shrink:0}
+.api-text{font-size:12px;color:#166534;font-weight:600}
+.result-rows{display:flex;flex-direction:column;gap:5px}
+.rr{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:8px;font-size:11px;font-weight:600}
+.rr-key{display:flex;align-items:center;gap:7px}
+.rr-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 
-  /* STATS BAR */
-  .stats-bar{background:var(--blue);padding:48px 5vw;text-align:center}
-  .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:700px;margin:0 auto}
-  .stat-item .n{font-size:44px;font-weight:800;color:#fff;line-height:1}
-  .stat-item .l{font-size:13px;color:rgba(255,255,255,.72);margin-top:6px;font-weight:500}
+/* floating badges */
+.float-badge{position:absolute;background:var(--white);border:1px solid var(--s200);border-radius:12px;padding:10px 14px;box-shadow:0 8px 24px rgba(15,23,42,.09);font-size:12px;font-weight:700;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.fb-left{left:-32px;top:36%}
+.fb-right{right:-24px;bottom:22%}
 
-  /* FEATURES */
-  .features{padding:80px 5vw;max-width:1100px;margin:0 auto}
-  .section-tag{font-size:12px;font-weight:700;color:var(--blue);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px}
-  .section-title{font-size:clamp(24px,3.5vw,38px);font-weight:800;line-height:1.2;letter-spacing:-.02em;margin-bottom:12px}
-  .section-sub{font-size:16px;color:var(--slate500);max-width:520px;line-height:1.6;margin-bottom:48px}
-  .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-  .feat-card{background:var(--white);border:1px solid var(--slate200);border-radius:14px;padding:24px;transition:box-shadow .2s,transform .2s}
-  .feat-card:hover{box-shadow:0 8px 32px rgba(26,86,219,.1);transform:translateY(-2px)}
-  .feat-icon{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:16px}
-  .feat-title{font-size:15px;font-weight:700;color:var(--slate900);margin-bottom:8px}
-  .feat-desc{font-size:13px;color:var(--slate500);line-height:1.6}
+/* ── DIVIDER ── */
+.divider{background:var(--s900);padding:56px 6vw}
+.divider-inner{max-width:1160px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+.div-item{padding:32px 40px;border-right:1px solid rgba(255,255,255,.08)}
+.div-item:last-child{border-right:none}
+.div-n{font-size:48px;font-weight:900;color:var(--white);line-height:1;letter-spacing:-.03em;margin-bottom:8px}
+.div-n span{color:var(--blue-mm);font-size:32px}
+.div-l{font-size:14px;color:rgba(255,255,255,.5);line-height:1.5;font-weight:400}
 
-  /* HOW IT WORKS */
-  .how{background:var(--slate50);padding:80px 5vw}
-  .how-inner{max-width:1100px;margin:0 auto}
-  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:0;position:relative;margin-top:48px}
-  .steps::before{content:'';position:absolute;top:22px;left:16%;right:16%;height:2px;background:var(--blue-mid);z-index:0}
-  .step{text-align:center;position:relative;z-index:1;padding:0 12px}
-  .step-circle{width:44px;height:44px;border-radius:50%;background:var(--blue);color:#fff;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;border:3px solid var(--white);box-shadow:0 0 0 2px var(--blue)}
-  .step-title{font-size:14px;font-weight:700;color:var(--slate900);margin-bottom:6px}
-  .step-desc{font-size:12px;color:var(--slate500);line-height:1.5}
-  .step-highlight{display:inline-block;margin-top:8px;background:var(--blue-light);color:var(--blue);font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;border:1px solid var(--blue-mid)}
+/* ── SECTIONS ── */
+.section{padding:100px 6vw}
+.section-inner{max-width:1160px;margin:0 auto}
+.eyebrow{font-size:12px;font-weight:700;color:var(--blue);letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px}
+.section-h{font-size:clamp(28px,3.5vw,42px);font-weight:900;line-height:1.1;letter-spacing:-.03em;color:var(--s900);margin-bottom:16px}
+.section-p{font-size:16px;color:var(--s500);line-height:1.7;max-width:520px;margin-bottom:56px}
 
-  /* STATUSES */
-  .statuses{padding:80px 5vw;max-width:1100px;margin:0 auto}
-  .status-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:40px}
-  .status-card{border-radius:14px;padding:22px;display:flex;align-items:flex-start;gap:14px}
-  .status-bullet{width:12px;height:12px;border-radius:50%;margin-top:4px;flex-shrink:0}
-  .status-card .s-title{font-size:15px;font-weight:700;margin-bottom:6px}
-  .status-card .s-desc{font-size:13px;line-height:1.6}
+/* ── FEATURES ── */
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:var(--s200);border:1px solid var(--s200);border-radius:16px;overflow:hidden}
+.feat{background:var(--white);padding:32px;transition:background .2s}
+.feat:hover{background:var(--blue-l)}
+.feat-ico{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:20px;flex-shrink:0}
+.feat-title{font-size:16px;font-weight:700;color:var(--s900);margin-bottom:8px;letter-spacing:-.2px}
+.feat-desc{font-size:13px;color:var(--s500);line-height:1.65}
 
-  /* TEAM */
-  .team{background:var(--slate50);padding:80px 5vw;text-align:center}
-  .team-inner{max-width:900px;margin:0 auto}
-  .team-badge{display:inline-flex;align-items:center;gap:8px;background:var(--yellow-light);color:var(--yellow);border:1px solid #FDE68A;border-radius:999px;padding:6px 16px;font-size:12px;font-weight:700;margin-bottom:24px}
-  .team-title{font-size:clamp(24px,3.5vw,36px);font-weight:800;margin-bottom:12px}
-  .team-sub{font-size:15px;color:var(--slate500);line-height:1.6;max-width:560px;margin:0 auto 40px}
-  .bird{font-size:72px;margin-bottom:8px;display:block;animation:soar 3s ease-in-out infinite}
-  @keyframes soar{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-10px) rotate(2deg)}}
+/* ── HOW IT WORKS ── */
+.how-bg{background:var(--s900)}
+.how-bg .eyebrow{color:var(--blue-mm)}
+.how-bg .section-h{color:var(--white)}
+.how-bg .section-p{color:rgba(255,255,255,.5)}
+.steps-row{display:grid;grid-template-columns:1fr 56px 1fr 56px 1fr;align-items:start;gap:0}
+.step-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:28px 24px}
+.step-card.auto{background:rgba(26,86,219,.15);border-color:rgba(99,162,255,.25)}
+.step-num{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-bottom:16px}
+.step-card .step-num{color:rgba(255,255,255,.3)}
+.step-card.auto .step-num{color:var(--blue-mm)}
+.step-icon-wrap{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:16px}
+.step-title{font-size:16px;font-weight:700;margin-bottom:8px;color:var(--white);letter-spacing:-.2px}
+.step-card.auto .step-title{color:var(--blue-mm)}
+.step-desc{font-size:13px;line-height:1.6;color:rgba(255,255,255,.45)}
+.step-card.auto .step-desc{color:rgba(147,197,253,.65)}
+.step-arrow{display:flex;align-items:center;justify-content:center;padding-top:60px}
+.arrow-line{width:100%;height:1px;background:rgba(255,255,255,.12);position:relative}
+.arrow-line::after{content:'';position:absolute;right:-1px;top:-4px;border:5px solid transparent;border-left:7px solid rgba(255,255,255,.25)}
+.step-highlight{display:inline-flex;align-items:center;gap:6px;margin-top:14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.6);font-size:11px;font-weight:600;padding:4px 10px;border-radius:999px}
+.step-card.auto .step-highlight{background:rgba(26,86,219,.3);border-color:rgba(99,162,255,.3);color:var(--blue-mm)}
 
-  /* CTA */
-  .cta{background:linear-gradient(135deg,var(--blue) 0%,#2563EB 100%);padding:80px 5vw;text-align:center}
-  .cta h2{font-size:clamp(26px,4vw,42px);font-weight:800;color:#fff;margin-bottom:14px;letter-spacing:-.02em}
-  .cta p{font-size:16px;color:rgba(255,255,255,.78);margin-bottom:32px;max-width:480px;margin-left:auto;margin-right:auto}
-  .btn-white{background:#fff;color:var(--blue);border:none;border-radius:10px;padding:13px 32px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;transition:opacity .15s,transform .1s;display:inline-block}
-  .btn-white:hover{opacity:.92;transform:translateY(-1px)}
+/* ── STATUSES ── */
+.status-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.status-card{border-radius:16px;padding:28px;border:1px solid transparent;transition:transform .2s}
+.status-card:hover{transform:translateY(-2px)}
+.sc-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.sc-bullet{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.sc-title{font-size:16px;font-weight:700;letter-spacing:-.2px}
+.sc-desc{font-size:13px;line-height:1.65}
 
-  /* FOOTER */
-  footer{padding:28px 5vw;border-top:1px solid var(--slate200);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
-  footer .logo-text{font-size:14px}
-  footer p{font-size:12px;color:var(--slate400)}
+/* ── SECURITY ── */
+.security-row{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+.sec-list{display:flex;flex-direction:column;gap:16px;margin-top:32px}
+.sec-item{display:flex;align-items:flex-start;gap:14px;padding:18px 20px;background:var(--s50);border:1px solid var(--s200);border-radius:12px}
+.sec-check{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;margin-top:1px}
+.sec-item-title{font-size:14px;font-weight:700;color:var(--s900);margin-bottom:3px}
+.sec-item-desc{font-size:12px;color:var(--s500);line-height:1.5}
+.security-visual{background:var(--s900);border-radius:20px;padding:32px;display:flex;flex-direction:column;gap:12px}
+.sv-title{font-size:13px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}
+.sv-row{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:10px}
+.sv-label{font-size:13px;color:rgba(255,255,255,.6);font-weight:500}
+.sv-status{font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px}
+.sv-ok{background:rgba(22,163,74,.2);color:#4ade80;border:1px solid rgba(22,163,74,.3)}
+.sv-rec{background:rgba(26,86,219,.2);color:var(--blue-mm);border:1px solid rgba(26,86,219,.3)}
 
-  @media(max-width:768px){
-    .features-grid{grid-template-columns:1fr}
-    .steps{grid-template-columns:1fr 1fr}
-    .steps::before{display:none}
-    .status-grid{grid-template-columns:1fr}
-    .stats-grid{grid-template-columns:1fr;gap:32px}
-    .m-panels{grid-template-columns:1fr}
-    .m-stats{grid-template-columns:repeat(3,1fr)}
-  }
+/* ── TEAM ── */
+.team-section{background:var(--blue);padding:100px 6vw;text-align:center}
+.team-eyebrow{font-size:12px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px}
+.team-h{font-size:clamp(32px,4vw,52px);font-weight:900;color:var(--white);letter-spacing:-.04em;line-height:1.05;margin-bottom:16px}
+.team-p{font-size:17px;color:rgba(255,255,255,.65);max-width:540px;margin:0 auto 40px;line-height:1.7}
+.btn-white{background:var(--white);color:var(--blue-d);border:none;border-radius:10px;padding:14px 32px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:all .15s}
+.btn-white:hover{opacity:.92;transform:translateY(-1px)}
+.tech-row{display:flex;justify-content:center;gap:10px;margin-top:32px;flex-wrap:wrap}
+.tech-pill{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);font-size:12px;font-weight:600;padding:6px 16px;border-radius:999px}
+
+/* ── FOOTER ── */
+footer{background:var(--s900);padding:32px 6vw;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.foot-logo .logo-name{color:var(--white)}
+.foot-logo .logo-name em{color:var(--blue-mm)}
+footer p{font-size:12px;color:rgba(255,255,255,.3)}
+footer a{font-size:12px;color:var(--blue-mm);font-weight:600;text-decoration:none}
+
+@media(max-width:900px){
+  .hero-inner{grid-template-columns:1fr;gap:48px}
+  .hero-visual{display:none}
+  .divider-inner{grid-template-columns:1fr}
+  .div-item{border-right:none;border-bottom:1px solid rgba(255,255,255,.08);padding:24px 0}
+  .feat-grid{grid-template-columns:1fr}
+  .steps-row{grid-template-columns:1fr;gap:12px}
+  .step-arrow{display:none}
+  .status-grid{grid-template-columns:1fr}
+  .security-row{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
 
 <!-- NAV -->
 <nav>
-  <div class="logo">
-    <div class="logo-icon">O</div>
-    <span class="logo-text">Onfly <span>Conciliador</span></span>
-  </div>
-  <div style="display:flex;align-items:center;gap:14px">
-    <span class="nav-badge">Hackathon 2026</span>
-    <a href="https://github.com/jonathanaas/tucano_hipersonico_hackathon" target="_blank" class="nav-cta">Ver no GitHub</a>
+  <a class="logo" href="#">
+    <div class="logo-mark">O</div>
+    <span class="logo-name">Onfly <em>Conciliador</em></span>
+  </a>
+  <div class="nav-right">
+    <span class="nav-pill">Hackathon 2026</span>
+    <a href="#features" class="nav-link">Funcionalidades</a>
+    <a href="#security" class="nav-link">Segurança</a>
+    <a href="https://github.com/jonathanaas/tucano_hipersonico_hackathon" target="_blank" class="nav-btn">Ver no GitHub</a>
   </div>
 </nav>
 
 <!-- HERO -->
 <section class="hero">
-  <div class="hero-tag">
-    <span class="dot"></span>
-    Hackathon Onfly 2026 · Tucano Hipersônico
-  </div>
-  <h1>Conciliação de extratos<br><span class="accent">sem planilha, sem dor.</span></h1>
-  <p class="hero-sub">Importe dois CSVs, configure as colunas-chave e descubra em segundos onde estão as divergências financeiras.</p>
-  <div class="hero-btns">
-    <a href="https://github.com/jonathanaas/tucano_hipersonico_hackathon" target="_blank" class="btn-primary">🚀 Acessar o projeto</a>
-    <a href="#features" class="btn-secondary">Ver funcionalidades</a>
+  <div class="hero-bg"></div>
+  <div class="hero-inner">
+    <div>
+      <div class="hero-kicker">
+        <span class="kicker-dot"></span>
+        Tucano Hipersônico · Hackathon Onfly 2026
+      </div>
+      <h1>
+        Conciliação<br>
+        <span class="line-blue">que se resolve</span><br>
+        <span class="line-muted">sozinha.</span>
+      </h1>
+      <p class="hero-desc">
+        Suba a fatura. A Onfly busca os dados via API, cruza tudo automaticamente e entrega o relatório de divergências em segundos — sem planilha, sem esforço, sem margem para erro.
+      </p>
+      <div class="hero-actions">
+        <a href="https://github.com/jonathanaas/tucano_hipersonico_hackathon" target="_blank" class="btn-primary">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1C4.13 1 1 4.13 1 8c0 3.09 2.01 5.72 4.79 6.65.35.06.48-.15.48-.34v-1.19c-1.95.42-2.36-.94-2.36-.94-.32-.81-.78-1.03-.78-1.03-.64-.44.05-.43.05-.43.7.05 1.07.72 1.07.72.62 1.07 1.63.76 2.03.58.06-.45.24-.76.44-.93-1.56-.18-3.2-.78-3.2-3.47 0-.77.27-1.39.72-1.88-.07-.18-.31-.89.07-1.85 0 0 .59-.19 1.93.72A6.7 6.7 0 018 4.8c.6 0 1.2.08 1.76.23 1.34-.91 1.93-.72 1.93-.72.38.96.14 1.67.07 1.85.45.49.72 1.11.72 1.88 0 2.7-1.64 3.29-3.2 3.47.25.22.48.65.48 1.31v1.94c0 .19.13.4.48.34A7.002 7.002 0 0015 8c0-3.87-3.13-7-7-7z" fill="currentColor"/></svg>
+          Acessar projeto
+        </a>
+        <a href="#how" class="btn-ghost">Como funciona</a>
+      </div>
+      <div class="hero-trust">
+        <div class="trust-item">
+          <div class="trust-icon" style="color:var(--green);font-size:10px">✓</div>
+          100% client-side
+        </div>
+        <div class="trust-item">
+          <div class="trust-icon" style="color:var(--green);font-size:10px">✓</div>
+          Nenhum dado no servidor
+        </div>
+        <div class="trust-item">
+          <div class="trust-icon" style="color:var(--green);font-size:10px">✓</div>
+          Integração Onfly API
+        </div>
+      </div>
+    </div>
+
+    <!-- App preview -->
+    <div class="hero-visual">
+      <div class="float-badge fb-left" style="color:var(--green)">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--green)"></div>
+        247 registros conciliados
+      </div>
+      <div class="screen">
+        <div class="screen-bar">
+          <div class="sb-dot" style="background:#FC5753"></div>
+          <div class="sb-dot" style="background:#FDBC40"></div>
+          <div class="sb-dot" style="background:#34C749"></div>
+          <span>Onfly Conciliador</span>
+        </div>
+        <div class="screen-body">
+          <div class="sb-label">1 — Suba a fatura</div>
+          <div class="upload-zone">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">fatura-abril-2026.csv</div>
+            <div class="upload-sub">312 lançamentos detectados</div>
+          </div>
+          <div class="api-row">
+            <span class="api-badge">API ONFLY</span>
+            <span class="api-text">Buscando despesas (Tipo ≠ Padrão)... concluído</span>
+          </div>
+          <div class="sb-label" style="margin-bottom:10px">Resultado da conciliação</div>
+          <div class="result-rows">
+            <div class="rr" style="background:var(--green-l)">
+              <div class="rr-key"><div class="rr-dot" style="background:var(--green)"></div><span style="color:#166534">✓ Conciliado</span></div>
+              <span style="color:#166534;font-size:12px">247 registros</span>
+            </div>
+            <div class="rr" style="background:var(--yellow-l)">
+              <div class="rr-key"><div class="rr-dot" style="background:var(--yellow)"></div><span style="color:#92400E">≠ Valor diferente</span></div>
+              <span style="color:#92400E;font-size:12px">18 registros</span>
+            </div>
+            <div class="rr" style="background:var(--red-l)">
+              <div class="rr-key"><div class="rr-dot" style="background:var(--red)"></div><span style="color:#991B1B">← Só na fatura</span></div>
+              <span style="color:#991B1B;font-size:12px">47 registros</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="float-badge fb-right" style="color:var(--blue-dd)">
+        <span style="font-size:16px">⚡</span>
+        Processado em 1.4s
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- MOCKUP -->
-<div class="mockup-strip">
-  <div class="mockup">
-    <div class="mockup-bar">
-      <div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div>
-      <span>Onfly Conciliador — comparação em tempo real</span>
+<!-- DIVIDER STATS -->
+<div class="divider">
+  <div class="divider-inner">
+    <div class="div-item">
+      <div class="div-n">1<span>passo</span></div>
+      <div class="div-l">O usuário só sobe a fatura.<br>O sistema resolve o resto.</div>
     </div>
-    <div class="mockup-body">
-      <div class="m-header">
-        <div>
-          <div class="m-title">Comparador de Extratos</div>
-          <div class="m-subtitle">Cruzamento automático de dados financeiros</div>
-        </div>
-        <div style="background:var(--green-light);border:1px solid var(--green-mid);color:var(--green);font-size:11px;font-weight:700;padding:5px 12px;border-radius:8px">✓ 3 etapas simples</div>
-      </div>
-      <div class="m-panels">
-        <div class="m-panel">
-          <div class="m-panel-badge">
-            <div class="m-num" style="background:var(--blue)">1</div>
-            <span class="m-col-header" style="color:var(--blue)">Extrato — fonte principal</span>
-          </div>
-          <table class="m-table">
-            <thead><tr><th>ID</th><th>Descrição</th><th>Valor</th></tr></thead>
-            <tbody>
-              <tr><td>TXN-001</td><td>Hotel SP</td><td>R$ 540,00</td></tr>
-              <tr><td>TXN-002</td><td>Voo GRU-BSB</td><td>R$ 890,00</td></tr>
-              <tr><td>TXN-003</td><td>Taxi</td><td>R$ 42,00</td></tr>
-              <tr><td>TXN-004</td><td>Almoço cliente</td><td>R$ 180,00</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="m-panel">
-          <div class="m-panel-badge">
-            <div class="m-num" style="background:var(--green)">2</div>
-            <span class="m-col-header" style="color:var(--green)">2ª Fonte — sistema</span>
-          </div>
-          <table class="m-table">
-            <thead><tr><th>ID</th><th>Descrição</th><th>Valor</th></tr></thead>
-            <tbody>
-              <tr><td>TXN-001</td><td>Hotel SP</td><td>R$ 540,00</td></tr>
-              <tr><td>TXN-002</td><td>Voo GRU-BSB</td><td>R$ 875,00</td></tr>
-              <tr><td>TXN-005</td><td>Estacionamento</td><td>R$ 25,00</td></tr>
-              <tr><td>TXN-004</td><td>Almoço cliente</td><td>R$ 180,00</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div class="m-result">
-        <div style="font-size:12px;font-weight:700;color:var(--slate700);margin-bottom:8px">4 — Resultado da Comparação</div>
-        <div class="m-stats">
-          <div class="m-stat" style="background:var(--slate100)"><div class="m-stat-n" style="color:var(--slate700)">4</div><div class="m-stat-l" style="color:var(--slate500)">Total</div></div>
-          <div class="m-stat" style="background:var(--green-light)"><div class="m-stat-n" style="color:var(--green)">2</div><div class="m-stat-l" style="color:var(--green)">✓ Confere</div></div>
-          <div class="m-stat" style="background:var(--yellow-light)"><div class="m-stat-n" style="color:var(--yellow)">1</div><div class="m-stat-l" style="color:var(--yellow)">≠ Diverge</div></div>
-          <div class="m-stat" style="background:var(--red-light)"><div class="m-stat-n" style="color:var(--red)">1</div><div class="m-stat-l" style="color:var(--red)">← Só extrato</div></div>
-          <div class="m-stat" style="background:var(--blue-light)"><div class="m-stat-n" style="color:var(--blue)">1</div><div class="m-stat-l" style="color:var(--blue)">→ Só sistema</div></div>
-        </div>
-        <div class="status-row" style="background:var(--yellow-light);color:var(--yellow)">≠ Valor diferente · TXN-002 — Extrato: R$ 890,00 · Sistema: R$ 875,00 · Diferença: -R$ 15,00</div>
-        <div class="status-row" style="background:var(--red-light);color:var(--red)">← Só no extrato · TXN-003 — Taxi — R$ 42,00 · não encontrado na 2ª fonte</div>
-        <div class="status-row" style="background:var(--blue-light);color:var(--blue)">→ Só na 2ª fonte · TXN-005 — Estacionamento — R$ 25,00 · não encontrado no extrato</div>
-      </div>
+    <div class="div-item">
+      <div class="div-n">&lt;2<span>seg</span></div>
+      <div class="div-l">Para cruzar milhares de<br>registros com a API Onfly.</div>
+    </div>
+    <div class="div-item">
+      <div class="div-n">0<span>kb</span></div>
+      <div class="div-l">de dados financeiros<br>saem do navegador.</div>
     </div>
   </div>
 </div>
 
-<!-- STATS BAR -->
-<section class="stats-bar">
-  <div class="stats-grid">
-    <div class="stat-item"><div class="n">100%</div><div class="l">Processamento local — nenhum dado sai do navegador</div></div>
-    <div class="stat-item"><div class="n">&lt; 2s</div><div class="l">Para cruzar milhares de registros</div></div>
-    <div class="stat-item"><div class="n">4</div><div class="l">Status de divergência identificados automaticamente</div></div>
-  </div>
-</section>
-
 <!-- FEATURES -->
-<section class="features" id="features">
-  <div class="section-tag">Funcionalidades</div>
-  <h2 class="section-title">Tudo que o time financeiro precisava</h2>
-  <p class="section-sub">Do upload ao relatório exportado, sem configuração, sem servidor, sem complicação.</p>
-  <div class="features-grid">
-    <div class="feat-card">
-      <div class="feat-icon" style="background:var(--blue-light);font-size:22px">📁</div>
-      <div class="feat-title">Upload drag & drop</div>
-      <div class="feat-desc">Arraste seus CSVs ou clique para selecionar. O parse acontece instantaneamente no browser com PapaParse.</div>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon" style="background:var(--green-light);font-size:22px">🔑</div>
-      <div class="feat-title">Mapeamento flexível de colunas</div>
-      <div class="feat-desc">Escolha qual coluna é a chave de cruzamento e qual é o valor monetário — funciona com qualquer formato de CSV.</div>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon" style="background:var(--yellow-light);font-size:22px">⚡</div>
-      <div class="feat-title">Comparação instantânea</div>
-      <div class="feat-desc">Motor de comparação que cruza os dados em milissegundos, classificando cada registro em 4 categorias de status.</div>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon" style="background:var(--red-light);font-size:22px">🔍</div>
-      <div class="feat-title">Filtros por divergência</div>
-      <div class="feat-desc">Visualize apenas os registros que diferem, os que aparecem só em uma das fontes, ou os que conferem perfeitamente.</div>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon" style="background:var(--blue-light);font-size:22px">⬇</div>
-      <div class="feat-title">Exportação CSV</div>
-      <div class="feat-desc">Exporte o resultado completo da comparação com status, valores e diferenças em um clique, pronto para auditoria.</div>
-    </div>
-    <div class="feat-card">
-      <div class="feat-icon" style="background:var(--green-light);font-size:22px">🔒</div>
-      <div class="feat-title">100% local e seguro</div>
-      <div class="feat-desc">Nenhum dado financeiro sai do seu navegador. Todo o processamento é client-side — privacidade total garantida.</div>
+<section class="section" id="features">
+  <div class="section-inner">
+    <div class="eyebrow">Funcionalidades</div>
+    <h2 class="section-h">Cada detalhe pensado<br>para o time financeiro.</h2>
+    <p class="section-p">Do upload à exportação, o produto elimina o trabalho manual e entrega precisão cirúrgica na identificação de divergências.</p>
+    <div class="feat-grid">
+      <div class="feat">
+        <div class="feat-ico" style="background:var(--blue-l)">📁</div>
+        <div class="feat-title">Upload drag & drop</div>
+        <div class="feat-desc">Arraste o CSV da fatura ou clique para selecionar. Parse instantâneo no browser com PapaParse — sem upload para servidor.</div>
+      </div>
+      <div class="feat">
+        <div class="feat-ico" style="background:#EEF2FF">⚡</div>
+        <div class="feat-title">Integração Onfly API</div>
+        <div class="feat-desc">O sistema consulta automaticamente as despesas da Onfly, filtrando apenas registros com Tipo ≠ Padrão, sem intervenção do usuário.</div>
+      </div>
+      <div class="feat">
+        <div class="feat-ico" style="background:var(--green-l)">🔀</div>
+        <div class="feat-title">Cruzamento inteligente</div>
+        <div class="feat-desc">Chave composta por Data + Valor + Colaborador + Final do cartão. Tolerância de R$ 0,01 para variações de arredondamento.</div>
+      </div>
+      <div class="feat">
+        <div class="feat-ico" style="background:#FDF4FF">🤖</div>
+        <div class="feat-title">Normalização por IA</div>
+        <div class="feat-desc">Nomes em minúsculo sem acentos, valores em padrão US 00.00, datas em YYYY-MM-DD e texto em UTF-8 — automaticamente.</div>
+      </div>
+      <div class="feat">
+        <div class="feat-ico" style="background:var(--yellow-l)">🔍</div>
+        <div class="feat-title">Compras e estornos</div>
+        <div class="feat-desc">Detecção automática de estornos por valor negativo ou palavras-chave — chargeback, crédito, cancelamento — com badge visual distinto.</div>
+      </div>
+      <div class="feat">
+        <div class="feat-ico" style="background:var(--green-l)">⬇</div>
+        <div class="feat-title">Exportação auditável</div>
+        <div class="feat-desc">Relatório completo em CSV com status, colaborador, final do cartão, valor normalizado e origem — pronto para auditoria.</div>
+      </div>
     </div>
   </div>
 </section>
 
 <!-- HOW IT WORKS -->
-<section class="how">
-  <div class="how-inner">
-    <div class="section-tag">Como funciona</div>
-    <h2 class="section-title">1 passo. Pronto.</h2>
-    <div class="steps">
-      <div class="step">
-        <div class="step-circle">1</div>
+<section class="section how-bg" id="how">
+  <div class="section-inner">
+    <div class="eyebrow">Como funciona</div>
+    <h2 class="section-h" style="color:var(--white)">Um passo do usuário.<br>Todo o resto é automático.</h2>
+    <p class="section-p">A complexidade fica escondida. A experiência é absurdamente simples.</p>
+    <div class="steps-row">
+      <div class="step-card">
+        <div class="step-num">Passo 01</div>
+        <div class="step-icon-wrap" style="background:rgba(26,86,219,.15)">📁</div>
         <div class="step-title">Suba a fatura</div>
-        <div class="step-desc">Arraste ou selecione o CSV da fatura — cartão corporativo, banco ou ERP. É o único passo manual.</div>
-        <span class="step-highlight">📁 Upload CSV</span>
+        <div class="step-desc">O único passo manual. Arraste o CSV do extrato do cartão corporativo. É tudo que o usuário precisa fazer.</div>
+        <div class="step-highlight">CSV · Drag & drop</div>
       </div>
-      <div class="step">
-        <div class="step-circle" style="background:var(--green);box-shadow:0 0 0 2px var(--green)">⚡</div>
+      <div class="step-arrow"><div class="arrow-line"></div></div>
+      <div class="step-card auto">
+        <div class="step-num">Automático</div>
+        <div class="step-icon-wrap" style="background:rgba(26,86,219,.25)">⚡</div>
         <div class="step-title">API Onfly busca os dados</div>
-        <div class="step-desc">O sistema consulta automaticamente os registros da Onfly via API — sem nenhuma ação do usuário.</div>
-        <span class="step-highlight" style="background:var(--green-light);color:var(--green);border-color:var(--green-mid)">⚡ Automático</span>
+        <div class="step-desc">O sistema consulta automaticamente as despesas da plataforma Onfly — apenas as de Tipo ≠ Padrão — e normaliza tudo via IA.</div>
+        <div class="step-highlight">Onfly API · Sem ação</div>
       </div>
-      <div class="step">
-        <div class="step-circle" style="background:var(--slate700);box-shadow:0 0 0 2px var(--slate700)">✓</div>
+      <div class="step-arrow"><div class="arrow-line"></div></div>
+      <div class="step-card">
+        <div class="step-num">Resultado</div>
+        <div class="step-icon-wrap" style="background:rgba(22,163,74,.15)">✓</div>
         <div class="step-title">Relatório pronto</div>
-        <div class="step-desc">Divergências identificadas, classificadas por status e prontas para exportar. Tudo em segundos.</div>
-        <span class="step-highlight" style="background:var(--slate100);color:var(--slate700);border-color:var(--slate200)">⬇ Exportar CSV</span>
+        <div class="step-desc">Divergências classificadas por status, com vínculo colaborador + cartão, distinção compra/estorno e exportação em CSV.</div>
+        <div class="step-highlight">Export CSV · Auditoria</div>
       </div>
     </div>
   </div>
 </section>
 
 <!-- STATUSES -->
-<section class="statuses">
-  <div class="section-tag">Categorias de status</div>
-  <h2 class="section-title">Cada divergência, identificada</h2>
-  <p class="section-sub">O motor de comparação classifica cada registro automaticamente em uma das quatro categorias abaixo.</p>
-  <div class="status-grid">
-    <div class="status-card" style="background:var(--green-light);border:1px solid var(--green-mid)">
-      <div class="status-bullet" style="background:var(--green)"></div>
-      <div>
-        <div class="s-title" style="color:var(--green)">✓ Confere</div>
-        <div class="s-desc" style="color:#166534">O registro existe nas duas fontes e o valor bate dentro da tolerância de R$ 0,01. Tudo certo.</div>
+<section class="section" style="background:var(--s50)">
+  <div class="section-inner">
+    <div class="eyebrow">Classificação</div>
+    <h2 class="section-h">4 categorias.<br>Nenhuma divergência escapa.</h2>
+    <p class="section-p">Cada lançamento é classificado automaticamente. O time financeiro sabe exatamente onde agir.</p>
+    <div class="status-grid">
+      <div class="status-card" style="background:var(--green-l);border-color:var(--green-m)">
+        <div class="sc-header">
+          <div class="sc-bullet" style="background:var(--green)"></div>
+          <div class="sc-title" style="color:#166534">Conciliado</div>
+        </div>
+        <div class="sc-desc" style="color:#166534;opacity:.85">Registro encontrado nas duas fontes com valor idêntico (tolerância de R$ 0,01). Zero ação necessária.</div>
       </div>
-    </div>
-    <div class="status-card" style="background:var(--yellow-light);border:1px solid #FDE68A">
-      <div class="status-bullet" style="background:var(--yellow)"></div>
-      <div>
-        <div class="s-title" style="color:var(--yellow)">≠ Valor diferente</div>
-        <div class="s-desc" style="color:#92400E">A chave existe nas duas fontes mas os valores divergem. A diferença exata é exibida com sinal.</div>
+      <div class="status-card" style="background:var(--yellow-l);border-color:#FDE68A">
+        <div class="sc-header">
+          <div class="sc-bullet" style="background:var(--yellow)"></div>
+          <div class="sc-title" style="color:#92400E">Valor diferente</div>
+        </div>
+        <div class="sc-desc" style="color:#92400E;opacity:.85">Chave encontrada em ambas as fontes, mas os valores divergem. A diferença exata é exibida com sinal positivo ou negativo.</div>
       </div>
-    </div>
-    <div class="status-card" style="background:var(--red-light);border:1px solid #FECACA">
-      <div class="status-bullet" style="background:var(--red)"></div>
-      <div>
-        <div class="s-title" style="color:var(--red)">← Só no extrato</div>
-        <div class="s-desc" style="color:#991B1B">O registro existe no extrato principal mas não foi encontrado na 2ª fonte. Pode ser um lançamento pendente.</div>
+      <div class="status-card" style="background:var(--red-l);border-color:#FECACA">
+        <div class="sc-header">
+          <div class="sc-bullet" style="background:var(--red)"></div>
+          <div class="sc-title" style="color:#991B1B">Só na fatura</div>
+        </div>
+        <div class="sc-desc" style="color:#991B1B;opacity:.85">Lançamento presente no extrato do cartão mas sem correspondência na Onfly. Pode indicar despesa não registrada.</div>
       </div>
-    </div>
-    <div class="status-card" style="background:var(--blue-light);border:1px solid var(--blue-mid)">
-      <div class="status-bullet" style="background:var(--blue)"></div>
-      <div>
-        <div class="s-title" style="color:var(--blue)">→ Só na 2ª fonte</div>
-        <div class="s-desc" style="color:#1240AA">O registro existe na 2ª fonte mas não está no extrato. Pode ser um lançamento não reconhecido.</div>
+      <div class="status-card" style="background:var(--blue-l);border-color:var(--blue-m)">
+        <div class="sc-header">
+          <div class="sc-bullet" style="background:var(--blue)"></div>
+          <div class="sc-title" style="color:var(--blue-dd)">Só na Onfly</div>
+        </div>
+        <div class="sc-desc" style="color:var(--blue-dd);opacity:.85">Despesa registrada na plataforma mas ausente na fatura. Pode ser lançamento pendente ou cancelamento não processado.</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- TEAM -->
-<section class="team">
-  <div class="team-inner">
-    <div class="team-badge">⚡ Hackathon Onfly 2026</div>
-    <span class="bird">🦜</span>
-    <h2 class="team-title">Tucano Hipersônico</h2>
-    <p class="team-sub">Projeto desenvolvido durante o Hackathon Onfly 2026. Construído em React + Vite com PapaParse — zero dependências de backend, deploy instantâneo, performance hipersônica.</p>
-    <a href="https://github.com/jonathanaas/tucano_hipersonico_hackathon" target="_blank" class="btn-primary" style="font-size:14px">
-      ⭐ Ver código no GitHub
-    </a>
+<!-- SECURITY -->
+<section class="section" id="security">
+  <div class="section-inner">
+    <div class="security-row">
+      <div>
+        <div class="eyebrow">Segurança</div>
+        <h2 class="section-h">Construído para<br>ir à produção.</h2>
+        <p class="section-p" style="margin-bottom:0">Segurança não foi um detalhe — foi requisito desde o primeiro dia. Cada controle pensado para proteger dados financeiros sensíveis.</p>
+        <div class="sec-list">
+          <div class="sec-item">
+            <div class="sec-check" style="background:var(--green-l);color:var(--green)">✓</div>
+            <div>
+              <div class="sec-item-title">Processamento 100% client-side</div>
+              <div class="sec-item-desc">Nenhum dado financeiro trafega para servidores externos. Todo o parse e cruzamento acontece no navegador do usuário.</div>
+            </div>
+          </div>
+          <div class="sec-item">
+            <div class="sec-check" style="background:var(--green-l);color:var(--green)">✓</div>
+            <div>
+              <div class="sec-item-title">TLS 1.2+ em todas as chamadas</div>
+              <div class="sec-item-desc">A integração com a API da Onfly exige canal criptografado obrigatório — nenhuma chamada em HTTP simples é aceita.</div>
+            </div>
+          </div>
+          <div class="sec-item">
+            <div class="sec-check" style="background:var(--green-l);color:var(--green)">✓</div>
+            <div>
+              <div class="sec-item-title">Menor privilégio na API</div>
+              <div class="sec-item-desc">O token consulta apenas leitura das despesas necessárias. Nenhum escopo adicional é solicitado ou aceito.</div>
+            </div>
+          </div>
+          <div class="sec-item">
+            <div class="sec-check" style="background:var(--blue-l);color:var(--blue)">→</div>
+            <div>
+              <div class="sec-item-title">Sanitização contra CSV Injection</div>
+              <div class="sec-item-desc">Todos os campos são sanitizados antes de exibir e exportar — prevenindo fórmulas maliciosas como =CMD() no Excel.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="security-visual">
+        <div class="sv-title">Checklist de controles</div>
+        <div class="sv-row"><span class="sv-label">TLS 1.2+ nas chamadas de API</span><span class="sv-status sv-ok">Obrigatório</span></div>
+        <div class="sv-row"><span class="sv-label">Token nunca exposto no frontend</span><span class="sv-status sv-ok">Obrigatório</span></div>
+        <div class="sv-row"><span class="sv-label">Validação de schema do CSV</span><span class="sv-status sv-ok">Obrigatório</span></div>
+        <div class="sv-row"><span class="sv-label">Verificação de tenant/empresa</span><span class="sv-status sv-ok">Obrigatório</span></div>
+        <div class="sv-row"><span class="sv-label">Autenticação antes do upload</span><span class="sv-status sv-ok">Obrigatório</span></div>
+        <div class="sv-row"><span class="sv-label">Sanitização CSV Injection</span><span class="sv-status sv-ok">Obrigatório</span></div>
+        <div class="sv-row"><span class="sv-label">Log de auditoria por execução</span><span class="sv-status sv-rec">Recomendado</span></div>
+        <div class="sv-row"><span class="sv-label">Hash de integridade no export</span><span class="sv-status sv-rec">Recomendado</span></div>
+        <div class="sv-row"><span class="sv-label">Rate limiting na API</span><span class="sv-status sv-rec">Recomendado</span></div>
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- CTA -->
-<section class="cta">
-  <h2>Pronto para conciliar<br>sem dor de cabeça?</h2>
-  <p>Abra o projeto, importe seus CSVs e tenha o relatório de divergências em menos de 2 minutos.</p>
-  <a href="https://github.com/jonathanaas/tucano_hipersonico_hackathon" target="_blank" class="btn-white">🚀 Começar agora</a>
+<!-- TEAM CTA -->
+<section class="team-section">
+  <div class="team-eyebrow">Hackathon Onfly 2026</div>
+  <h2 class="team-h">Tucano Hipersônico 🦜</h2>
+  <p class="team-p">De ideia a produto funcional em horas. Uma dor real, uma solução simples, tecnologia que funciona. Isso é o que hackathons são feitos para isso.</p>
+  <a href="https://github.com/jonathanaas/tucano_hipersonico_hackathon" target="_blank" class="btn-white">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1C4.13 1 1 4.13 1 8c0 3.09 2.01 5.72 4.79 6.65.35.06.48-.15.48-.34v-1.19c-1.95.42-2.36-.94-2.36-.94-.32-.81-.78-1.03-.78-1.03-.64-.44.05-.43.05-.43.7.05 1.07.72 1.07.72.62 1.07 1.63.76 2.03.58.06-.45.24-.76.44-.93-1.56-.18-3.2-.78-3.2-3.47 0-.77.27-1.39.72-1.88-.07-.18-.31-.89.07-1.85 0 0 .59-.19 1.93.72A6.7 6.7 0 018 4.8c.6 0 1.2.08 1.76.23 1.34-.91 1.93-.72 1.93-.72.38.96.14 1.67.07 1.85.45.49.72 1.11.72 1.88 0 2.7-1.64 3.29-3.2 3.47.25.22.48.65.48 1.31v1.94c0 .19.13.4.48.34A7.002 7.002 0 0015 8c0-3.87-3.13-7-7-7z" fill="currentColor"/></svg>
+    Ver código no GitHub
+  </a>
+  <div class="tech-row">
+    <span class="tech-pill">React 18</span>
+    <span class="tech-pill">Vite</span>
+    <span class="tech-pill">PapaParse</span>
+    <span class="tech-pill">Onfly API</span>
+    <span class="tech-pill">100% client-side</span>
+  </div>
 </section>
 
 <!-- FOOTER -->
 <footer>
-  <div class="logo">
-    <div class="logo-icon">O</div>
-    <span class="logo-text">Onfly <span>Conciliador</span></span>
-  </div>
-  <p>Hackathon Onfly 2026 · Tucano Hipersônico · Feito com ♥ em React + Vite</p>
-  <a href="https://app.onfly.com" target="_blank" style="font-size:12px;color:var(--blue);font-weight:600;text-decoration:none">app.onfly.com ↗</a>
+  <a class="logo foot-logo" href="#">
+    <div class="logo-mark">O</div>
+    <span class="logo-name">Onfly <em>Conciliador</em></span>
+  </a>
+  <p>Hackathon Onfly 2026 · Tucano Hipersônico</p>
+  <a href="https://app.onfly.com" target="_blank">app.onfly.com ↗</a>
 </footer>
 
 </body>
