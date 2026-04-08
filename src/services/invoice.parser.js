@@ -74,7 +74,7 @@ function detectColumns(headers) {
 export function parseInvoiceCsv(file) {
   return new Promise((resolve, reject) => {
     Papa.parse(file, {
-      encoding:       "latin1",
+      encoding:       "utf-8",
       skipEmptyLines: false,
       complete(result) {
         const data = result.data;

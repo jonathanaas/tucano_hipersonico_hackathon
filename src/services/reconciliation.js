@@ -104,11 +104,21 @@ function expAmount(exp) {
 
 /**
  * Extrai o nome normalizado do colaborador de uma despesa Onfly.
+ * Tenta múltiplos campos porque o nome pode estar em paths diferentes.
  * @param {any} exp
  * @returns {string}
  */
 function expName(exp) {
-  return normalizeText(exp.user?.name ?? "");
+  const raw =
+    exp.user?.name ??
+    exp.user?.full_name ??
+    (exp.user?.first_name
+      ? [exp.user.first_name, exp.user.last_name].filter(Boolean).join(" ")
+      : null) ??
+    exp.collaborator?.name ??
+    exp.employee?.name ??
+    "";
+  return normalizeText(raw);
 }
 
 /**
@@ -118,7 +128,26 @@ function expName(exp) {
  */
 function isTypePadrao(exp) {
   const tipo = normalizeText(exp.expenditureType?.name ?? "");
-  return tipo === "padrao" || tipo === "";
+  return tipo === "padrao";
+}
+
+/**
+ * Verifica compatibilidade de nomes:
+ *  - Se um dos lados estiver vazio → aceita (nome desconhecido no Onfly)
+ *  - Se ambos têm conteúdo → exige ao menos 1 palavra comum (> 2 chars)
+ * @param {string} a - nome normalizado
+ * @param {string} b - nome normalizado
+ * @returns {boolean}
+ */
+function namesOverlap(a, b) {
+  if (a === b) return true;
+  // Onfly sem nome = aceitar qualquer colaborador da fatura
+  if (!a || !b) return true;
+  const wordsA = a.split(" ").filter((w) => w.length > 2);
+  const wordsB = b.split(" ").filter((w) => w.length > 2);
+  // Nenhum dos dois tem palavras longas suficientes = aceitar
+  if (!wordsA.length || !wordsB.length) return true;
+  return wordsA.some((w) => wordsB.includes(w));
 }
 
 // ─── Motor principal ──────────────────────────────────────────────────────────
@@ -126,13 +155,14 @@ function isTypePadrao(exp) {
 /**
  * Cruza linhas da fatura com despesas da API Onfly.
  *
- * Algoritmo:
+ * Algoritmo em 2 passes:
  *  1. Filtra Onfly: remove tipo "Padrão"
- *  2. Indexa Onfly por (data | nome_normalizado)
+ *  2. Indexa Onfly por (data | nome_normalizado)  ← match exato
+ *                e por  (data)                    ← fallback fuzzy
  *  3. Para cada linha da fatura:
  *     - Estornos: always only_invoice
- *     - Compras/Pix: busca candidatos por data+nome, escolhe o de menor
- *       diferença de valor dentro da tolerância
+ *     - Compras/Pix: busca por data+nome exato; se falhar, tenta
+ *       data+nome_fuzzy (sobreposição de palavras) com mesmo valor
  *  4. Monta resultados
  *
  * @param   {import('./invoice.parser.js').InvoiceRow[]} invoiceRows
@@ -149,16 +179,43 @@ export function reconcile(invoiceRows, expenditures) {
     `[reconcile] Total Onfly: ${expenditures.length} | Após filtro (sem Padrão): ${onFlyFiltered.length}`
   );
 
-  // Índice: "YYYY-MM-DD|nome_normalizado" → lista de { exp, amount }
+  // Índice primário: "YYYY-MM-DD|nome_normalizado" → lista de { exp, amount, name }
   const byDateName = new Map();
+  // Índice secundário: "YYYY-MM-DD" → lista de { exp, amount, name }  (fallback fuzzy)
+  const byDate     = new Map();
+
+  let skipped = 0;
   for (const e of onFlyFiltered) {
     const date   = expDate(e);
     const name   = expName(e);
     const amount = expAmount(e);
-    if (!date || amount == null) continue;
+    if (!date || amount == null) { skipped++; continue; }
+
+    const entry = { exp: e, amount, name };
+
+    // Índice exato
     const key = `${date}|${name}`;
     if (!byDateName.has(key)) byDateName.set(key, []);
-    byDateName.get(key).push({ exp: e, amount });
+    byDateName.get(key).push(entry);
+
+    // Índice por data
+    if (!byDate.has(date)) byDate.set(date, []);
+    byDate.get(date).push(entry);
+  }
+
+  console.log(
+    `[reconcile] Indexados: ${byDate.size > 0 ? [...byDate.values()].reduce((s, v) => s + v.length, 0) : 0} | Pulados (sem data/valor): ${skipped}`
+  );
+
+  // Diagnóstico: primeiras entradas de cada lado
+  if (invoiceRows.length > 0) {
+    const r = invoiceRows[0];
+    console.log("[reconcile] Fatura[0] key:", `${r._dateKey}|${normalizeText(r._colaborador)}`, "valor:", r._valor);
+  }
+  if (byDate.size > 0) {
+    const firstDate = [...byDate.keys()][0];
+    const firstEntry = byDate.get(firstDate)[0];
+    console.log("[reconcile] Onfly[0] key:", `${firstDate}|${firstEntry.name}`, "valor:", firstEntry.amount);
   }
 
   // ── Passo 2: cruzar fatura com Onfly ─────────────────────────────────────
@@ -177,16 +234,15 @@ export function reconcile(invoiceRows, expenditures) {
     const amount = row._valor;
     const key    = `${date}|${name}`;
 
-    const candidates = byDateName.get(key) ?? [];
+    // ── Pass A: match exato por data+nome ──────────────────────────────────
+    const exactCandidates = byDateName.get(key) ?? [];
 
-    // Melhor match por valor (dentro da tolerância)
-    let bestMatch  = null;
-    let bestDiff   = Infinity;
-    // Melhor candidato divergente (mesmo dia+nome mas valor fora da tolerância)
-    let bestDiverg = null;
+    let bestMatch   = null;
+    let bestDiff    = Infinity;
+    let bestDiverg  = null;
     let bestDivDiff = Infinity;
 
-    for (const c of candidates) {
+    for (const c of exactCandidates) {
       if (matchedExpIds.has(c.exp.id)) continue;
       const diff = Math.abs(c.amount - amount);
       if (diff <= AMOUNT_TOLERANCE && diff < bestDiff) {
@@ -195,6 +251,23 @@ export function reconcile(invoiceRows, expenditures) {
       } else if (diff > AMOUNT_TOLERANCE && diff < bestDivDiff) {
         bestDiverg  = c;
         bestDivDiff = diff;
+      }
+    }
+
+    // ── Pass B: fallback fuzzy — mesma data, nome com sobreposição ─────────
+    if (!bestMatch && !bestDiverg) {
+      const dateCandidates = byDate.get(date) ?? [];
+      for (const c of dateCandidates) {
+        if (matchedExpIds.has(c.exp.id)) continue;
+        if (!namesOverlap(name, c.name)) continue;
+        const diff = Math.abs(c.amount - amount);
+        if (diff <= AMOUNT_TOLERANCE && diff < bestDiff) {
+          bestMatch = c;
+          bestDiff  = diff;
+        } else if (diff > AMOUNT_TOLERANCE && diff < bestDivDiff) {
+          bestDiverg  = c;
+          bestDivDiff = diff;
+        }
       }
     }
 
@@ -213,6 +286,8 @@ export function reconcile(invoiceRows, expenditures) {
 
   // ── Passo 3: despesas Onfly sem correspondência → only_onfly ─────────────
   for (const e of onFlyFiltered) {
+    const date = expDate(e); const amount = expAmount(e);
+    if (!date || amount == null) continue;
     if (!matchedExpIds.has(e.id)) {
       results.push({ status: "only_onfly", invoice: null, expenditure: e, diff: null });
     }
@@ -274,12 +349,12 @@ export function computeStats(results) {
 export function toExportRows(results) {
   return results.map((r) => {
     const tipo = r.invoice?._isEstorno ? "Estorno" : (r.invoice?._tipo ?? "");
-    const expAmount = normalizeAmount(
+    const expAmt = normalizeAmount(
       r.expenditure?.amount ?? r.expenditure?.value ?? r.expenditure?.total ?? null
     );
 
     return {
-      status:              r.status === "match" ? "✓ Conciliado" : "← Somente na fatura",
+      status:              r.status === "match" || r.status === "divergent" ? "Conciliado" : "Somente na fatura",
       tipo_fatura:         tipo,
       data_fatura:         r.invoice?._dateKey ?? "",
       colaborador:         r.invoice?._colaborador ?? "",
@@ -293,7 +368,7 @@ export function toExportRows(results) {
       categoria_onfly:     r.expenditure?.expenditureType?.name ?? "",
       centro_custo:        r.expenditure?.costCenter?.name ?? "",
       rdv:                 r.expenditure?.rdv?.id ?? "",
-      valor_onfly:         expAmount != null ? expAmount.toFixed(2) : "",
+      valor_onfly:         expAmt != null ? expAmt.toFixed(2) : "",
       diferenca:           r.diff != null ? r.diff.toFixed(2) : "",
     };
   });

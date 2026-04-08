@@ -12,7 +12,7 @@ import * as Papa from "papaparse";
 
 import { parseInvoiceCsv }                       from "./services/invoice.parser.js";
 import { useExpenditures }                       from "./hooks/useExpenditures.js";
-import { reconcile, computeStats, toExportRows } from "./services/reconciliation.js";
+import { reconcile, computeStats, toExportRows, normalizeText, normalizeDate, normalizeAmount } from "./services/reconciliation.js";
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
@@ -188,7 +188,8 @@ export default function App() {
   // ── Resultados ─────────────────────────────────────────────────────────────
   const [results,   setResults]   = useState(null);
   const [stats,     setStats]     = useState(null);
-  const [activeView, setActiveView] = useState("match"); // "match" | "only_invoice"
+  const [diag,      setDiag]      = useState(null);
+  const [activeView, setActiveView] = useState("conciliado"); // "conciliado" | "somente_fatura"
 
   // Fatura filtrada pelo range escolhido
   const invoiceRows = allInvoiceRows
@@ -216,10 +217,37 @@ export default function App() {
   useEffect(() => {
     if (loading || expenditures.length === 0) return;
     const rows = invoiceRowsRef.current ?? [];
+
+    // Diagnóstico: mostra o que chegou de cada lado para facilitar debug
+    const apiFiltered = expenditures.filter(
+      (e) => normalizeText(e.expenditureType?.name ?? "") !== "padrao"
+    );
+    const firstExp  = apiFiltered[0];
+    const firstInv  = rows.find((r) => !r._isEstorno);
+    setDiag({
+      apiTotal:    expenditures.length,
+      apiFiltered: apiFiltered.length,
+      onfly: firstExp ? {
+        date:      normalizeDate(firstExp.occurrence_date ?? firstExp.date ?? firstExp.created_at),
+        name:      normalizeText(firstExp.user?.name ?? ""),
+        amount:    normalizeAmount(firstExp.amount ?? firstExp.value ?? firstExp.total),
+        rawDate:   firstExp.occurrence_date ?? firstExp.date ?? firstExp.created_at ?? "—",
+        rawName:   firstExp.user?.name ?? "—",
+        rawAmount: firstExp.amount ?? firstExp.value ?? firstExp.total ?? "—",
+        tipo:      firstExp.expenditureType?.name ?? "—",
+      } : null,
+      invoice: firstInv ? {
+        date:   firstInv._dateKey,
+        name:   normalizeText(firstInv._colaborador),
+        amount: firstInv._valor,
+        rawName: firstInv._colaborador,
+      } : null,
+    });
+
     const r = reconcile(rows, expenditures);
     setResults(r);
     setStats(computeStats(r));
-    setActiveView("match");
+    setActiveView("conciliado");
     setTimeout(() => document.getElementById("results")?.scrollIntoView({ behavior: "smooth" }), 120);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading]);
@@ -261,6 +289,7 @@ export default function App() {
     setInvoiceErrors([]);
     setResults(null);
     setStats(null);
+    setDiag(null);
     setIsParsing(false);
   };
 
@@ -293,7 +322,6 @@ export default function App() {
   const conciliados    = results?.filter((r) => r.status === "match")        ?? [];
   const divergentes    = results?.filter((r) => r.status === "divergent")    ?? [];
   const soExtrato      = results?.filter((r) => r.status === "only_invoice") ?? [];
-  const soOnfly        = results?.filter((r) => r.status === "only_onfly")   ?? [];
   const estornos       = soExtrato.filter((r) => r.invoice?._isEstorno);
 
   const datesOk  = !!dateStart && !!dateEnd;
@@ -530,13 +558,24 @@ export default function App() {
         {hasResults && (
           <div id="results" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
-            {/* ── BIG NUMBERS ── */}
+            {/* ── BIG NUMBERS — 2 views ── */}
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "stretch" }}>
-              <BigNumber value={stats.total}       label="Total"         color={C.slate700} bg={C.slate100}   active={activeView === "all"}          onClick={() => setActiveView("all")} />
-              <BigNumber value={stats.matched}     label="Conciliado"    color={C.green}    bg={C.greenLight} active={activeView === "match"}         onClick={() => setActiveView("match")} />
-              <BigNumber value={stats.divergent}   label="Divergente"    color={C.amber}    bg={C.amberLight} active={activeView === "divergent"}     onClick={() => setActiveView("divergent")} />
-              <BigNumber value={stats.onlyInvoice} label="Só extrato"    color={C.red}      bg={C.redLight}   active={activeView === "only_invoice"}  onClick={() => setActiveView("only_invoice")} />
-              <BigNumber value={stats.onlyOnfly}   label="Só Onfly"      color={C.blue}     bg={C.blueLight}  active={activeView === "only_onfly"}    onClick={() => setActiveView("only_onfly")} />
+              <BigNumber value={stats.matched + stats.divergent} label="Conciliado"       color={C.green}    bg={C.greenLight} active={activeView === "conciliado"}      onClick={() => setActiveView("conciliado")} />
+              <BigNumber value={stats.onlyInvoice}               label="Somente na fatura" color={C.red}      bg={C.redLight}   active={activeView === "somente_fatura"}  onClick={() => setActiveView("somente_fatura")} />
+
+              {/* Info cards (não clicáveis) */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, justifyContent: "center", minWidth: 120 }}>
+                <div style={{ background: C.blueLight, borderRadius: 10, padding: "8px 14px", textAlign: "center" }}>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: C.blue, lineHeight: 1 }}>{stats.conciliationRate}%</div>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: C.blue, marginTop: 3 }}>Taxa conciliada</div>
+                </div>
+                {stats.estornos > 0 && (
+                  <div style={{ background: C.redLight, borderRadius: 10, padding: "6px 14px", textAlign: "center" }}>
+                    <div style={{ fontSize: 18, fontWeight: 900, color: C.red, lineHeight: 1 }}>{stats.estornos}</div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: C.red, marginTop: 2 }}>Estornos</div>
+                  </div>
+                )}
+              </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 8, justifyContent: "center", marginLeft: "auto" }}>
                 <button onClick={() => exportCsv(toExportRows(results), "conciliacao-onfly.csv")} style={{
@@ -549,6 +588,77 @@ export default function App() {
                 }}>↺ Re-conciliar</button>
               </div>
             </div>
+
+            {/* ── DIAGNÓSTICO: aparece quando 0 conciliados ── */}
+            {stats && (stats.matched + stats.divergent) === 0 && diag && (
+              <div style={{
+                background: C.amberLight, border: `1px solid ${C.amberMid}`,
+                borderRadius: 16, padding: "16px 20px",
+              }}>
+                <div style={{ fontWeight: 700, fontSize: 13, color: C.amber, marginBottom: 10 }}>
+                  ⚠ Diagnóstico — nenhum item conciliado
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, fontSize: 11 }}>
+                  {/* API */}
+                  <div>
+                    <div style={{ fontWeight: 700, color: C.slate600, marginBottom: 6 }}>
+                      API Onfly — {diag.apiTotal} despesas ({diag.apiFiltered} após filtro Padrão)
+                    </div>
+                    {diag.onfly ? (
+                      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                        {[
+                          ["Tipo", diag.onfly.tipo],
+                          ["Data raw", diag.onfly.rawDate],
+                          ["Data norm", diag.onfly.date ?? "❌ inválida"],
+                          ["Nome raw", diag.onfly.rawName],
+                          ["Nome norm", diag.onfly.name || "❌ vazio"],
+                          ["Valor raw", String(diag.onfly.rawAmount)],
+                          ["Valor norm", diag.onfly.amount != null ? diag.onfly.amount.toFixed(2) : "❌ inválido"],
+                        ].map(([k, v]) => (
+                          <tr key={k} style={{ borderBottom: `1px solid ${C.amberMid}` }}>
+                            <td style={{ padding: "3px 8px", color: C.slate500, fontWeight: 600, width: 90 }}>{k}</td>
+                            <td style={{ padding: "3px 8px", color: C.slate800, fontFamily: "monospace" }}>{v}</td>
+                          </tr>
+                        ))}
+                      </table>
+                    ) : <span style={{ color: C.slate400 }}>Nenhuma despesa retornada.</span>}
+                  </div>
+                  {/* Fatura */}
+                  <div>
+                    <div style={{ fontWeight: 700, color: C.slate600, marginBottom: 6 }}>
+                      Fatura CSV — {invoiceRows?.length} linhas no período
+                    </div>
+                    {diag.invoice ? (
+                      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                        {[
+                          ["Data", diag.invoice.date],
+                          ["", ""],
+                          ["", ""],
+                          ["Nome raw", diag.invoice.rawName],
+                          ["Nome norm", diag.invoice.name || "❌ vazio"],
+                          ["Valor", diag.invoice.amount?.toFixed(2) ?? "—"],
+                          ["", ""],
+                        ].map(([k, v], i) => (
+                          <tr key={i} style={{ borderBottom: `1px solid ${C.amberMid}` }}>
+                            <td style={{ padding: "3px 8px", color: C.slate500, fontWeight: 600, width: 90 }}>{k}</td>
+                            <td style={{ padding: "3px 8px", color: C.slate800, fontFamily: "monospace" }}>{v}</td>
+                          </tr>
+                        ))}
+                      </table>
+                    ) : <span style={{ color: C.slate400 }}>Nenhuma linha na fatura.</span>}
+                  </div>
+                </div>
+                <div style={{ marginTop: 10, fontSize: 11, color: C.slate500 }}>
+                  {diag.apiFiltered === 0
+                    ? "❌ A API não retornou nenhuma despesa fora do tipo Padrão. Verifique o período ou permissões do token."
+                    : !diag.onfly?.date
+                    ? "❌ As despesas da API não têm campo de data válido (occurrence_date/date/created_at)."
+                    : !diag.onfly?.name
+                    ? "❌ As despesas da API não têm nome de colaborador (user.name vazio). Verifique o include=user."
+                    : "⚠ Dados chegaram dos dois lados — verifique se datas e nomes correspondem entre Fatura e API."}
+                </div>
+              </div>
+            )}
 
             {/* ── DADOS BRUTOS: Fatura + Onfly ── */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
@@ -605,11 +715,10 @@ export default function App() {
               </div>
             </div>
 
-            {/* helper para renderizar tabela de resultado com dois lados (fatura + Onfly) */}
+            {/* ── Conciliado: fatura × Onfly ── */}
             {[
-              { key: "match",     show: activeView === "all" || activeView === "match",        rows: conciliados,  color: C.green,  border: C.greenMid,  title: "Conciliado",   twoSided: true },
-              { key: "divergent", show: activeView === "all" || activeView === "divergent",    rows: divergentes,  color: C.amber,  border: C.amberMid,  title: "Divergente",   twoSided: true },
-            ].map(({ key, show, rows, color, border, title, twoSided }) => show && (
+              { key: "conciliado", show: activeView === "conciliado", rows: conciliados.concat(divergentes), color: C.green, border: C.greenMid, title: "Conciliado" },
+            ].map(({ key, show, rows, color, border, title }) => show && (
               <div key={key} style={{
                 background: C.white, borderRadius: 16, padding: "clamp(14px,2.5vw,22px)",
                 border: `1px solid ${border}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
@@ -658,14 +767,14 @@ export default function App() {
             ))}
 
             {/* ── Só extrato (só na fatura do cartão) ── */}
-            {(activeView === "all" || activeView === "only_invoice") && (
+            {activeView === "somente_fatura" && (
               <div style={{
                 background: C.white, borderRadius: 16, padding: "clamp(14px,2.5vw,22px)",
                 border: `1px solid ${C.redMid}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
               }}>
                 <SectionHeader
                   color={C.red}
-                  title="Só extrato — na fatura, não encontrado no Onfly"
+                  title="Somente na fatura — na fatura, não encontrado no Onfly"
                   count={soExtrato.length}
                   badge={estornos.length > 0 && (
                     <span style={{ background: C.redLight, color: C.red, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 999 }}>
@@ -712,42 +821,6 @@ export default function App() {
               </div>
             )}
 
-            {/* ── Só Onfly (despesa sem correspondência na fatura) ── */}
-            {(activeView === "all" || activeView === "only_onfly") && (
-              <div style={{
-                background: C.white, borderRadius: 16, padding: "clamp(14px,2.5vw,22px)",
-                border: `1px solid ${C.blueMid}`, boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-              }}>
-                <SectionHeader color={C.blue} title="Só Onfly — despesa sem correspondência na fatura" count={soOnfly.length} />
-                <div style={{ overflowX: "auto", borderRadius: 10, border: `1px solid ${C.slate200}`, fontSize: 11 }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                    <thead>
-                      <tr>
-                        {["Data","Descrição","Tipo","Colaborador","Valor"].map((h, i) => (
-                          <th key={i} style={{ padding: "7px 10px", background: C.blue, color: C.white, fontWeight: 600, whiteSpace: "nowrap", textAlign: i === 4 ? "right" : "left" }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {soOnfly.length === 0 ? (
-                        <tr><td colSpan={5} style={{ padding: 24, textAlign: "center", color: C.slate400 }}>Nenhum item.</td></tr>
-                      ) : soOnfly.map((r, i) => {
-                        const e = r.expenditure;
-                        return (
-                          <tr key={i} style={{ background: i % 2 === 0 ? C.white : C.slate50, borderTop: `1px solid ${C.slate200}` }}>
-                            <td style={{ padding: "5px 10px", color: C.slate600, whiteSpace: "nowrap" }}>{e?.occurrence_date ?? e?.date ?? "—"}</td>
-                            <td style={{ padding: "5px 10px", color: C.slate700, maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={e?.description}>{e?.description ?? "—"}</td>
-                            <td style={{ padding: "5px 10px", color: C.slate500, whiteSpace: "nowrap" }}>{e?.expenditureType?.name ?? "—"}</td>
-                            <td style={{ padding: "5px 10px", color: C.slate600, whiteSpace: "nowrap" }}>{e?.user?.name ?? "—"}</td>
-                            <td style={{ padding: "5px 10px", color: C.blue, fontWeight: 600, textAlign: "right", whiteSpace: "nowrap" }}>{fmtBRL(e?.amount ?? e?.value ?? e?.total)}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
 
           </div>
         )}
