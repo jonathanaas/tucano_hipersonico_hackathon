@@ -6,5 +6,12 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true,
+    proxy: {
+      "/expense": {
+        target: "https://api.onfly.com",
+        changeOrigin: true,
+        secure: true,
+      },
+    },
   },
 });
