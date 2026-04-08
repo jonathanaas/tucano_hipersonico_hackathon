@@ -91,12 +91,13 @@
   /* HOW IT WORKS */
   .how{background:var(--slate50);padding:80px 5vw}
   .how-inner{max-width:1100px;margin:0 auto}
-  .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;margin-top:48px}
-  .steps::before{content:'';position:absolute;top:22px;left:12%;right:12%;height:2px;background:var(--blue-mid);z-index:0}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:0;position:relative;margin-top:48px}
+  .steps::before{content:'';position:absolute;top:22px;left:16%;right:16%;height:2px;background:var(--blue-mid);z-index:0}
   .step{text-align:center;position:relative;z-index:1;padding:0 12px}
   .step-circle{width:44px;height:44px;border-radius:50%;background:var(--blue);color:#fff;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;border:3px solid var(--white);box-shadow:0 0 0 2px var(--blue)}
   .step-title{font-size:14px;font-weight:700;color:var(--slate900);margin-bottom:6px}
   .step-desc{font-size:12px;color:var(--slate500);line-height:1.5}
+  .step-highlight{display:inline-block;margin-top:8px;background:var(--blue-light);color:var(--blue);font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;border:1px solid var(--blue-mid)}
 
   /* STATUSES */
   .statuses{padding:80px 5vw;max-width:1100px;margin:0 auto}
@@ -282,27 +283,25 @@
 <section class="how">
   <div class="how-inner">
     <div class="section-tag">Como funciona</div>
-    <h2 class="section-title">4 passos. Pronto.</h2>
+    <h2 class="section-title">1 passo. Pronto.</h2>
     <div class="steps">
       <div class="step">
         <div class="step-circle">1</div>
-        <div class="step-title">Importe o extrato</div>
-        <div class="step-desc">Arraste o CSV da fonte principal — banco, cartão corporativo ou ERP.</div>
+        <div class="step-title">Suba a fatura</div>
+        <div class="step-desc">Arraste ou selecione o CSV da fatura — cartão corporativo, banco ou ERP. É o único passo manual.</div>
+        <span class="step-highlight">📁 Upload CSV</span>
       </div>
       <div class="step">
-        <div class="step-circle">2</div>
-        <div class="step-title">Importe a 2ª fonte</div>
-        <div class="step-desc">Adicione o CSV de comparação — sistema interno, prestadora ou conciliadora.</div>
+        <div class="step-circle" style="background:var(--green);box-shadow:0 0 0 2px var(--green)">⚡</div>
+        <div class="step-title">API Onfly busca os dados</div>
+        <div class="step-desc">O sistema consulta automaticamente os registros da Onfly via API — sem nenhuma ação do usuário.</div>
+        <span class="step-highlight" style="background:var(--green-light);color:var(--green);border-color:var(--green-mid)">⚡ Automático</span>
       </div>
       <div class="step">
-        <div class="step-circle">3</div>
-        <div class="step-title">Configure as colunas</div>
-        <div class="step-desc">Selecione a coluna-chave e, opcionalmente, a coluna de valor monetário.</div>
-      </div>
-      <div class="step">
-        <div class="step-circle">4</div>
-        <div class="step-title">Analise & exporte</div>
-        <div class="step-desc">Veja o relatório com divergências destacadas e exporte para o time.</div>
+        <div class="step-circle" style="background:var(--slate700);box-shadow:0 0 0 2px var(--slate700)">✓</div>
+        <div class="step-title">Relatório pronto</div>
+        <div class="step-desc">Divergências identificadas, classificadas por status e prontas para exportar. Tudo em segundos.</div>
+        <span class="step-highlight" style="background:var(--slate100);color:var(--slate700);border-color:var(--slate200)">⬇ Exportar CSV</span>
       </div>
     </div>
   </div>
