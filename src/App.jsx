@@ -259,8 +259,8 @@ export default function App() {
       const sample = expenditures[0];
       console.log("Onfly[0] sample:", {
         id: sample.id, date: sample.date ?? sample.occurrence_date,
-        amount: sample.amount, user: sample.user?.data?.name ?? sample.user?.name,
-        tipo: sample.expenditureType?.data?.name ?? sample.expenditureType?.name ?? "(sem tipo)",
+        amount: sample.amount, user: sample.user?.name,
+        tipo: sample.expenditureType?.name ?? "(sem tipo)",
       });
     }
     if (rows.length > 0) {

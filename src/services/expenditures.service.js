@@ -150,12 +150,35 @@ export async function fetchExpenditurePage(filters) {
   };
 }
 
+// ─── Normalização ─────────────────────────────────────────────────────────────
+
+/**
+ * Normaliza um item bruto da API para o formato usado internamente.
+ *
+ * Problemas da API que resolve de uma vez:
+ *  - user, expenditureType, costCenter vêm como { data: { ... } } → desaninha
+ *  - amount vem em centavos (inteiro) → divide por 100 para BRL
+ */
+function normalizeExpenditure(e) {
+  return {
+    ...e,
+    // Valor em BRL (centavos → reais)
+    amount: e.amount != null ? parseFloat((e.amount / 100).toFixed(2)) : null,
+    // Colaborador: desaninha user.data
+    user: e.user?.data ?? e.user ?? null,
+    // Tipo: desaninha expenditureType.data (pode ser null para PIX/sem tipo)
+    expenditureType: e.expenditureType?.data ?? e.expenditureType ?? null,
+    // Centro de custo: desaninha costCenter.data
+    costCenter: e.costCenter?.data ?? e.costCenter ?? null,
+  };
+}
+
 /**
  * Busca **todas** as páginas de despesas de um período, com callback de progresso.
  *
  * @param {Omit<ExpenditureFilters, "page">} filters
  * @param {{ onProgress?: (loaded: number, total: number) => void }} [opts]
- * @returns {Promise<any[]>}  Array bruto de todas as despesas
+ * @returns {Promise<any[]>}  Array normalizado de todas as despesas
  */
 export async function fetchAllExpenditures(filters, { onProgress } = {}) {
   const perPage = filters.perPage ?? 100;
@@ -170,7 +193,7 @@ export async function fetchAllExpenditures(filters, { onProgress } = {}) {
   while (all.length < total) {
     const result = await fetchExpenditurePage({ ...filters, page, perPage });
 
-    all.push(...result.data);
+    all.push(...result.data.map(normalizeExpenditure));
     total = result.total;
 
     onProgress?.(all.length, total);
